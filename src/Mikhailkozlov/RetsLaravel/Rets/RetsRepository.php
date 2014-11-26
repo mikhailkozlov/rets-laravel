@@ -92,9 +92,9 @@ class RetsRepository implements RetsInterface
 
             return false;
         }
-        $result = (array)$resourcesData;
+        $result = (array)$resourcesData->METADATA;
 
-        return new Collection((array)$result['METADATA']->{METADATA-RESOURCE}->Resource);
+        return new Collection((array)$result['METADATA-RESOURCE']->Resource);
     }
 
     public function getClass($classID = null)
