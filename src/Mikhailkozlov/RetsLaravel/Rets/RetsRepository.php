@@ -5,6 +5,7 @@ use Guzzle\Http\Client,
     Illuminate\Events\Dispatcher,
     Illuminate\Config\Repository,
     Mikhailkozlov\RetsLaravel\Rets\Exceptions\ConnectionException;
+use Illuminate\Support\Collection;
 
 
 class RetsRepository implements RetsInterface
@@ -60,12 +61,18 @@ class RetsRepository implements RetsInterface
 
 
         // we need to find out what is the correct output once login is a go
-        print_r($login->getBody(true));
-        if ($login->getStatusCode() != 200) {
+        if ((string)$login->xml()->attributes()->ReplyText != 'Success') {
             throw new ConnectionException((string)$login->xml()->attributes()->ReplyText);
         }
     }
 
+    /**
+     *
+     * The response from this RETS request contains information about all of the Resources available on the RETS server. Note the KeyField for the “Property” Resource (assuming “LIST_1″ for the rest of these examples).
+     * http://retsgw.flexmls.com/rets2_1/GetMetadata?Type=METADATA-RESOURCE&ID=0&Format=COMPACT
+     *
+     * @param int $resourceID
+     */
     public function getResource($resourceID = 0)
     {
         // TODO: Implement getResource() method.
@@ -80,9 +87,14 @@ class RetsRepository implements RetsInterface
             )
         );
         $resourcesData = $resources->send()->xml();
-        echo '<pre>'; // MK: delete me
-        print_r((array)$resourcesData);
-        echo '</pre>';
+        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+            $this->lastError = $resourcesData->attributes()->ReplyText;
+
+            return false;
+        }
+        $result = (array)$resourcesData;
+
+        return new Collection((array)$result['METADATA']->{METADATA-RESOURCE}->Resource);
     }
 
     public function getClass($classID = null)

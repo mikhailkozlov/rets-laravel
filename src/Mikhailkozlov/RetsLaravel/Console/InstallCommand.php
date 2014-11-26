@@ -47,4 +47,4 @@ class InstallCommand extends Command
         );
     }
 
-} 
+} /Users/mkozlov/projects/rentals/workbench/mikhailkozlov/rets-laravel/src/config/config.php
