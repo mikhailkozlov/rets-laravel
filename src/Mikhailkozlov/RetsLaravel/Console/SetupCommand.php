@@ -32,6 +32,11 @@ class SetupCommand extends Command
         $rets = \App::make('rets');
 
         $meta = $rets->getResource();
+
+        echo '<pre>';
+        print_r($meta);
+        echo '</pre>';
+
     }
 
 
