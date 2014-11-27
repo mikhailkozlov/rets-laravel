@@ -71,7 +71,7 @@ class SetupCommand extends Command
         foreach ($selectedClass as $classId) {
             $metaTable = $rets->getTable(
                 $metaResource->get($selectedResource)->ResourceID,
-                $metaClass->get($selectedClass)->ClassName
+                $metaClass->get($classId)->ClassName
             );
             print_r($metaTable);
         }
