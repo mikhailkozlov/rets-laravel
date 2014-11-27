@@ -101,7 +101,7 @@ class RetsRepository implements RetsInterface
 
     public function getClass($classID = null)
     {
-        if(is_null($classID)){
+        if (is_null($classID)) {
             return null;
         }
 
@@ -131,7 +131,7 @@ class RetsRepository implements RetsInterface
 
     public function getTable($ResourceID, $classID)
     {
-        if(is_null($classID)){
+        if (is_null($classID)) {
             return null;
         }
 
@@ -141,11 +141,17 @@ class RetsRepository implements RetsInterface
             array(
                 'query' => array(
                     'Type' => 'METADATA-TABLE',
-                    'ID'   => $ResourceID.':'.$classID,
+                    'ID'   => $ResourceID . ':' . $classID,
                 )
             )
         );
-        $resourcesData = $resources->send()->xml();
+
+        $res = $resources->send();
+        // store output just in case
+        \File::put(app_path() . '/storage/' . $ResourceID . '_' . $classID . '.xml', $res->getBody(true));
+
+
+        $resourcesData = $res->xml();
         if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
@@ -153,7 +159,8 @@ class RetsRepository implements RetsInterface
         }
 
         // store output just in case
-        \File::put(app_path().'/storage/'.$ResourceID.'_'.$classID.'.xml', $resourcesData->__toString());
+        \File::put(app_path() . '/storage/' . $ResourceID . '_' . $classID . '.txt',
+            var_export((array)$resourcesData, true));
 
         // get results
         $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
