@@ -73,6 +73,9 @@ class SetupCommand extends Command
                 $metaResource->get($selectedResource)->ResourceID,
                 $metaClass->get($classId)->ClassName
             );
+
+            \File::put(app_path().'/'.$selectedResource.'_'.$classId.'.txt',var_export($metaTable));
+
             print_r($metaTable);
         }
 

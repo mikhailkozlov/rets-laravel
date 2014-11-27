@@ -122,8 +122,6 @@ class RetsRepository implements RetsInterface
             return null;
         }
 
-        print_r((array)$resourcesData);
-
         // get results
         $result = (array)$resourcesData->xpath('METADATA/METADATA-CLASS/Class');
 
@@ -154,10 +152,11 @@ class RetsRepository implements RetsInterface
             return null;
         }
 
-        print_r((array)$resourcesData);
+        // store output just in case
+        \File::put(app_path().'/storage/'.$ResourceID.'_'.$classID.'.xml', $resourcesData->__toString());
 
         // get results
-        $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Table');
+        $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
 
         // return collection
         return new Collection($result);
