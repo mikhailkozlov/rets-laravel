@@ -42,7 +42,7 @@ class SetupCommand extends Command
         foreach ($metaResource as $i => $resource) {
             $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
             if (stripos($resource->StandardName, 'property') !== false) {
-                $line = '<bg=green;options=bold>'.$line . '</bg=green;options=bold>';
+                $line = '<fg=green;options=bold>'.$line . '</fg=green;options=bold>';
             }
             $this->info($line);
         }
