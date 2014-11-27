@@ -42,7 +42,7 @@ class SetupCommand extends Command
         foreach ($metaResource as $i => $resource) {
             $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
             if (stripos($resource->StandardName, 'property') !== false) {
-                $line = '<fg=green;options=bold>'.$line . '</fg=green;options=bold>';
+                $line = '<fg=green;options=bold>' . $line . '</fg=green;options=bold>';
             }
             $this->info($line);
         }
@@ -57,7 +57,7 @@ class SetupCommand extends Command
         foreach ($metaClass as $i => $resource) {
             $line = ' [' . $i . '] ' . $resource->VisibleName . ' - ' . $resource->Description;
             if (stripos($resource->StandardName, 'property') !== false) {
-                $line = '<fg=green;options=bold>'.$line . '</fg=green;options=bold>';
+                $line = '<fg=green;options=bold>' . $line . '</fg=green;options=bold>';
             }
             $this->info($line);
         }
@@ -66,10 +66,12 @@ class SetupCommand extends Command
         $selectedClass = $this->ask('What class would you like to import? [0-9]');
         $this->info('Retrieving class data for ' . $selectedClass);
 
-        echo '<pre>';
-        print_r($metaClass);
-        echo '</pre>';
-
+        // get an array
+        $selectedClass = explode(',', $selectedClass);
+        foreach ($selectedClass as $classId) {
+            $metaTable = $rets->getTable($classId);
+            print_r($metaTable);
+        }
 
     }
 

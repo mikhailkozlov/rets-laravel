@@ -6,7 +6,7 @@ interface RetsInterface
 
     public function getResource($resourceID = null);
 
-    public function getClass($classID = null);
+    public function getClass($classID);
 
-    public function getTable($classID = null, $type);
+    public function getTable($classID, $type);
 }

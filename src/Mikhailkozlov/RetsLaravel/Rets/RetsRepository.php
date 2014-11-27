@@ -131,9 +131,36 @@ class RetsRepository implements RetsInterface
         return new Collection($result);
     }
 
-    public function getTable($classID = null, $type)
+    public function getTable($classID, $type)
     {
-        // TODO: Implement getTable() method.
+        if(is_null($classID)){
+            return null;
+        }
+
+        $resources = $this->client->get(
+            'GetMetadata',
+            array(),
+            array(
+                'query' => array(
+                    'Type' => 'METADATA-TABLE',
+                    'ID'   => $classID.':'.$type,
+                )
+            )
+        );
+        $resourcesData = $resources->send()->xml();
+        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+            $this->lastError = $resourcesData->attributes()->ReplyText;
+
+            return null;
+        }
+
+        print_r((array)$resourcesData);
+
+        // get results
+        $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Table');
+
+        // return collection
+        return new Collection($result);
     }
 
 
