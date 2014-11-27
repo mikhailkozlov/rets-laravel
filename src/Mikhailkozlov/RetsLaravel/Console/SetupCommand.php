@@ -40,10 +40,15 @@ class SetupCommand extends Command
         }
         $this->info('Following Resource are available:');
         foreach ($metaResource as $i => $resource) {
-            $this->info('- [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description);
+            $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
+            if (stripos($resource->StandardName, 'property') !== false) {
+                $line = '<options=bold>'.$line . '</options=bold>';
+            }
+            $this->info($line);
         }
         $selectedResource = $this->ask('What resource would you like to import? [0-9]');
         $this->info('Retrieving resource data for ' . $selectedResource);
+
     }
 
 
