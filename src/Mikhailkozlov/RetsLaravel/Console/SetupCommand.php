@@ -55,7 +55,7 @@ class SetupCommand extends Command
 
         $this->info('Following Classes are available:');
         foreach ($metaClass as $i => $resource) {
-            $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
+            $line = ' [' . $i . '] ' . $resource->VisibleName . ' - ' . $resource->Description;
             if (stripos($resource->StandardName, 'property') !== false) {
                 $line = '<fg=green;options=bold>'.$line . '</fg=green;options=bold>';
             }
