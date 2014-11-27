@@ -8,5 +8,5 @@ interface RetsInterface
 
     public function getClass($classID);
 
-    public function getTable($classID, $type);
+    public function getTable($ResourceID, $classID);
 }

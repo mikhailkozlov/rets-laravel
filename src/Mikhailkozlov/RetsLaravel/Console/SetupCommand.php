@@ -69,7 +69,10 @@ class SetupCommand extends Command
         // get an array
         $selectedClass = explode(',', $selectedClass);
         foreach ($selectedClass as $classId) {
-            $metaTable = $rets->getTable($classId);
+            $metaTable = $rets->getTable(
+                $metaResource->get($selectedResource)->ResourceID,
+                $metaClass->get($selectedClass)->ClassName
+            );
             print_r($metaTable);
         }
 

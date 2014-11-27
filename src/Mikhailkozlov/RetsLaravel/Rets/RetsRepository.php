@@ -131,7 +131,7 @@ class RetsRepository implements RetsInterface
         return new Collection($result);
     }
 
-    public function getTable($classID, $type)
+    public function getTable($ResourceID, $classID)
     {
         if(is_null($classID)){
             return null;
@@ -143,7 +143,7 @@ class RetsRepository implements RetsInterface
             array(
                 'query' => array(
                     'Type' => 'METADATA-TABLE',
-                    'ID'   => $classID.':'.$type,
+                    'ID'   => $ResourceID.':'.$classID,
                 )
             )
         );
