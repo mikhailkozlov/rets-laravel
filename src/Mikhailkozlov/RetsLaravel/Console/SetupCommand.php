@@ -53,9 +53,23 @@ class SetupCommand extends Command
 
         $metaClass = $rets->getClass($metaResource->get($selectedResource)->ResourceID);
 
+        $this->info('Following Classes are available:');
+        foreach ($metaClass as $i => $resource) {
+            $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
+            if (stripos($resource->StandardName, 'property') !== false) {
+                $line = '<fg=green;options=bold>'.$line . '</fg=green;options=bold>';
+            }
+            $this->info($line);
+        }
+
+        // get ID for next step
+        $selectedClass = $this->ask('What class would you like to import? [0-9]');
+        $this->info('Retrieving class data for ' . $selectedClass);
+
         echo '<pre>';
         print_r($metaClass);
         echo '</pre>';
+
 
     }
 
