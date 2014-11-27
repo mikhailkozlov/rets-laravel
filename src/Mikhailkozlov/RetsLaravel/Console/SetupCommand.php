@@ -31,12 +31,19 @@ class SetupCommand extends Command
     {
         $rets = \App::make('rets');
 
-        $meta = $rets->getResource();
+        $metaResource = $rets->getResource();
 
-        echo '<pre>';
-        print_r($meta);
-        echo '</pre>';
+        if (is_null($metaResource)) {
+            $this->error('Unable to load Resource metadata');
 
+            return;
+        }
+        $this->info('Following Resource are available:');
+        foreach ($metaResource as $i => $resource) {
+            $this->info('- [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description);
+        }
+        $selectedResource = $this->ask('What resource would you like to import? [0-9]');
+        $this->info('Retrieving resource data for ' . $selectedResource);
     }
 
 

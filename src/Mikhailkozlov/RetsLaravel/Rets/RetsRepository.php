@@ -90,11 +90,14 @@ class RetsRepository implements RetsInterface
         if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
-            return false;
+            return null;
         }
-        $result = (array)$resourcesData->METADATA;
 
-        return new Collection($result['METADATA-RESOURCE']->Resource);
+        // get results
+        $result = (array)$resourcesData->xpath('METADATA/METADATA-RESOURCE/Resource');
+
+        // return collection
+        return new Collection($result);
     }
 
     public function getClass($classID = null)
