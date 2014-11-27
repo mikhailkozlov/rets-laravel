@@ -46,8 +46,16 @@ class SetupCommand extends Command
             }
             $this->info($line);
         }
+
+        // get ID for next step
         $selectedResource = $this->ask('What resource would you like to import? [0-9]');
         $this->info('Retrieving resource data for ' . $selectedResource);
+
+        $metaClass = $rets->getClass($metaResource->get($selectedResource)->ResourceID);
+
+        echo '<pre>';
+        print_r($metaClass);
+        echo '</pre>';
 
     }
 

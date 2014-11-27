@@ -75,7 +75,6 @@ class RetsRepository implements RetsInterface
      */
     public function getResource($resourceID = 0)
     {
-        // TODO: Implement getResource() method.
         $resources = $this->client->get(
             'GetMetadata',
             array(),
@@ -102,7 +101,34 @@ class RetsRepository implements RetsInterface
 
     public function getClass($classID = null)
     {
-        // TODO: Implement getClass() method.
+        if(is_null($classID)){
+            return null;
+        }
+
+        $resources = $this->client->get(
+            'GetMetadata',
+            array(),
+            array(
+                'query' => array(
+                    'Type' => 'METADATA-CLASS',
+                    'ID'   => $classID,
+                )
+            )
+        );
+        $resourcesData = $resources->send()->xml();
+        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+            $this->lastError = $resourcesData->attributes()->ReplyText;
+
+            return null;
+        }
+
+        print_r((array)$resourcesData);
+
+        // get results
+        $result = (array)$resourcesData->xpath('METADATA/METADATA-CLASS/Class');
+
+        // return collection
+        return new Collection($result);
     }
 
     public function getTable($classID = null, $type)
