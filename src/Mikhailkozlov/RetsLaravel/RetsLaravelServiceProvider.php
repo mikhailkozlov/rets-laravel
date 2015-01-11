@@ -3,7 +3,7 @@
 use Illuminate\Support\ServiceProvider,
     Mikhailkozlov\RetsLaravel\Rets\RetsRepository,
     Mikhailkozlov\RetsLaravel\InstallCommand,
-    Mikhailkozlov\RetsLaravel\SetupCommand,
+    Mikhailkozlov\RetsLaravel\Console\SetupCommand,
     Mikhailkozlov\RetsLaravel\UpdateCommand;
 
 
