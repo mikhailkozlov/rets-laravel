@@ -95,35 +95,53 @@ class SetupCommand extends Command
 
         // we need to write metadata to  config
         $l = new FileLoader(new Filesystem(), app_path() . '/config');
-        $l->save(['rets_'.strtolower($table) => $labelMetadata], '', 'rets');
+        $l->save(['rets_' . strtolower($table) => $labelMetadata], '', 'rets');
 
         // create migration
         $this->call('generate:migration',
-            array('migrationName' => 'create_rets_'.strtolower($table).'_table', '--fields' => implode(', ', $fields)));
+            array(
+                'migrationName' => 'create_rets_' . strtolower($table) . '_table',
+                '--fields'      => implode(', ', $fields)
+            ));
 
         // we can move default model
 
         // we need default controllers
-
+        $runMigration = $this->ask('Would you like to run migration now? (y/n)');
+        if (in_array($runMigration, array('y', 'yes'))) {
+            $this->call('migrate', array('--env' => $this->option('env')));
+        }
     }
 
     public function fire()
     {
+        // get connector
         $rets = \App::make('rets');
 
+        // get top level resources
         $metaResource = $rets->getResource();
 
+        // check if we got any
         if (is_null($metaResource)) {
             $this->error('Unable to load Resource metadata');
 
             return;
         }
+
+        // we're on the roll
         $this->info('Following Resource are available:');
+
+        // loop and show options
         foreach ($metaResource as $i => $resource) {
+            // normal things are green
             $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
+
+            // there is 99% chance that we need property
             if (stripos($resource->StandardName, 'property') !== false) {
                 $line = '<fg=green;options=bold>' . $line . '</fg=green;options=bold>';
             }
+
+            // output
             $this->info($line);
         }
 
@@ -131,31 +149,43 @@ class SetupCommand extends Command
         $selectedResource = $this->ask('What resource would you like to import? [0-9]');
         $this->info('Retrieving resource data for ' . $selectedResource);
 
+        // get meta Classes for Resource
         $metaClass = $rets->getClass($metaResource->get($selectedResource)->ResourceID);
 
+        // make sure we got any
+        if(is_null($metaClass)){
+            $this->error('Unable to load Class metadata with error ' . $rets->getLastError());
+
+            return;
+        }
+
         $this->info('Following Classes are available:');
+
+        // loop classes and let pick multiple
         foreach ($metaClass as $i => $resource) {
+            // normal things are green
             $line = ' [' . $i . '] ' . $resource->VisibleName . ' - ' . $resource->Description;
+
+            // there is 99% chance that we need property
             if (stripos($resource->StandardName, 'property') !== false) {
                 $line = '<fg=green;options=bold>' . $line . '</fg=green;options=bold>';
             }
             $this->info($line);
         }
 
-        // get ID for next step
+        // now we need to know what tables to get
         $selectedClass = $this->ask('What class would you like to import? [0-9]');
         $this->info('Retrieving class data for ' . $selectedClass);
 
         // get an array
         $selectedClass = explode(',', $selectedClass);
+        // loop over selection and get table
         foreach ($selectedClass as $classId) {
+            // pull meta for table
             $metaTable = $rets->getTable(
                 $metaResource->get($selectedResource)->ResourceID,
                 $metaClass->get($classId)->ClassName
             );
-
-//            \File::put(app_path() . '/' . $selectedResource . '_' . $classId . '.txt', var_export($metaTable));
-//            print_r($metaTable);
 
             // time to create date
             $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable);

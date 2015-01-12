@@ -13,6 +13,7 @@ class RetsRepository implements RetsInterface
     protected $client;
     protected $config;
     protected $events;
+    public    $lastError;
 
     function __construct(Dispatcher $event, Repository $config)
     {
@@ -88,7 +89,7 @@ class RetsRepository implements RetsInterface
         $res = $resources->send();
 
         // store output just in case
-        \File::put(app_path() . '/storage/resource_' . $resourceID  . '.xml', $res->getBody(true));
+        \File::put(app_path() . '/storage/resource_' . $resourceID . '.xml', $res->getBody(true));
 
         $resourcesData = $res->xml();
 
@@ -182,7 +183,20 @@ class RetsRepository implements RetsInterface
         return new Collection($result);
     }
 
+    /**
+     *
+     * Output last issue
+     *
+     * @return mixed
+     */
+    public function getLastError()
+    {
+        if (is_array($this->lastError)) {
+            return $this->lastError[count($this->lastError) - 1];
+        }
 
+        return $this->lastError;
+    }
 }
 
 
