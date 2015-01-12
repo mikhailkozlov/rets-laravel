@@ -189,7 +189,6 @@ class SetupCommand extends Command
             // time to create date
             $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable);
         }
-
     }
 
 

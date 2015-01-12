@@ -172,16 +172,74 @@ class RetsRepository implements RetsInterface
             return null;
         }
 
-        // store output just in case
-        \File::put(app_path() . '/storage/' . $ResourceID . '_' . $classID . '.txt',
-            var_export((array)$resourcesData, true));
-
         // get results
         $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
 
         // return collection
         return new Collection($result);
     }
+
+    /**
+     *
+     * Search RETS server
+     *
+     * @param null $query
+     * @param string $searchType
+     * @param string $class
+     * @param string $queryType
+     *
+     * @return Collection|null
+     */
+    public function search($query = null, $searchType = 'Property', $class = 'A', $queryType = 'DMQL2')
+    {
+        //sample query from http://www.flexmls.com/support/rets/tutorials/example-rets-session/
+//        http://retsgw.flexmls.com/rets2_0/Search
+//        SearchType=Property&
+//        Class=A&
+//        QueryType=DMQL2&
+//        Query=%28LIST_15=%7COV61GOJ13C0%29&Count=0&Format=COMPACT-DECODED&StandardNames=0&RestrictedIndicator=****&Limit=50
+
+        if (is_null($query)) {
+            return null;
+        }
+
+        $resources = $this->client->get(
+            'Search',
+            array(),
+            array(
+                'query' => array(
+                    'SearchType'    => $searchType,
+                    'Class'         => $class,
+                    'QueryType'     => $queryType,
+                    'Query'         => $query,
+                    'Count'         => 0,
+                    'Format'        => 'COMPACT-DECODED',
+                    'StandardNames' => 0,
+
+                )
+            )
+        );
+
+        $res = $resources->send();
+        // store output just in case
+        \File::put(app_path() . '/storage/search_' . md5($query) . '.xml', $res->getBody(true));
+
+
+        $resourcesData = $res->xml();
+        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+            $this->lastError = $resourcesData->attributes()->ReplyText;
+
+            return null;
+        }
+        $result = array();
+        // get results
+        //$result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
+
+        // return collection
+        return new Collection($result);
+
+    }
+
 
     /**
      *

@@ -30,6 +30,11 @@ class UpdateCommand extends Command
     public function fire()
     {
 
+        // get connector
+        $rets = \App::make('rets');
+
+        // get top level resources
+        $metaResource = $rets->search('(LIST_87=1950-01-01T00:00:00+)');
 
     }
 
