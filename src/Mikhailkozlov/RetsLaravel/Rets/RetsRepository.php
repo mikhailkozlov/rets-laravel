@@ -85,7 +85,13 @@ class RetsRepository implements RetsInterface
                 )
             )
         );
-        $resourcesData = $resources->send()->xml();
+        $res = $resources->send();
+
+        // store output just in case
+        \File::put(app_path() . '/storage/resource_' . $resourceID  . '.xml', $res->getBody(true));
+
+        $resourcesData = $res->xml();
+
         if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
@@ -115,7 +121,14 @@ class RetsRepository implements RetsInterface
                 )
             )
         );
-        $resourcesData = $resources->send()->xml();
+
+        $res = $resources->send();
+
+        // store output just in case
+        \File::put(app_path() . '/storage/class_' . $classID . '.xml', $res->getBody(true));
+
+        $resourcesData = $res->xml();
+
         if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
@@ -148,7 +161,7 @@ class RetsRepository implements RetsInterface
 
         $res = $resources->send();
         // store output just in case
-        \File::put(app_path() . '/storage/' . $ResourceID . '_' . $classID . '.xml', $res->getBody(true));
+        \File::put(app_path() . '/storage/table_' . $ResourceID . '_' . $classID . '.xml', $res->getBody(true));
 
 
         $resourcesData = $res->xml();

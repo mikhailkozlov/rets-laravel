@@ -3,7 +3,8 @@
 use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
     Symfony\Component\Console\Input\InputArgument,
-    Mikhailkozlov\RetsLaravel\FileLoader;
+    Mikhailkozlov\RetsLaravel\FileLoader,
+    Illuminate\Filesystem\Filesystem;
 
 
 class SetupCommand extends Command
@@ -28,14 +29,14 @@ class SetupCommand extends Command
      * @author mkozlov
      *
      */
-    public function fire()
+    public function parseFields($table, $xml)
     {
-        $xml = simplexml_load_file(app_path() . '/storage/Property_A.xml');
+//        $xml = simplexml_load_file(app_path() . '/storage/Property_A.xml');
         $sourceFields = $xml->xpath('METADATA/METADATA-TABLE/Field');
 
         $fields = [];
         $usedFieldNames = [];
-        $dataType = [];
+        $labelMetadata = [];
         foreach ($sourceFields as $i => $sourceField) {
             // working with array is simple
             $sourceField = (array)$sourceField;
@@ -55,7 +56,7 @@ class SetupCommand extends Command
 
             switch ($sourceField['DataType']) {
                 case 'Int':
-                    $field[] = 'integer(' . $sourceField['MaximumLength'] . ')';
+                    $field[] = 'integer';
                     break;
                 case 'DateTime':
                     $field[] = 'dateTime';
@@ -82,17 +83,31 @@ class SetupCommand extends Command
                 $field[] = 'unique';
             }
 
+            // meta
+            $labelMetadata[$field[0]] = [
+                'name'       => (string)$sourceField['LongName'],
+                'type'       => (string)$sourceField['DataType'],
+                'searchable' => intval($sourceField['Searchable']),
+            ];
             // store
             $fields[] = implode(':', $field);
         }
 
+        // we need to write metadata to  config
+        $l = new FileLoader(new Filesystem(), app_path() . '/config');
+        $l->save(['rets_'.strtolower($table) => $labelMetadata], '', 'rets');
+
+        // create migration
         $this->call('generate:migration',
-            array('migrationName' => 'create_rets_properties_table', '--fields' => implode(', ', $fields)));
-        $this->call('generate:model',
-            array('modelName' => 'RetsProperties'));
+            array('migrationName' => 'create_rets_'.strtolower($table).'_table', '--fields' => implode(', ', $fields)));
+
+        // we can move default model
+
+        // we need default controllers
+
     }
 
-    public function fire_s()
+    public function fire()
     {
         $rets = \App::make('rets');
 
@@ -139,9 +154,11 @@ class SetupCommand extends Command
                 $metaClass->get($classId)->ClassName
             );
 
-            \File::put(app_path() . '/' . $selectedResource . '_' . $classId . '.txt', var_export($metaTable));
+//            \File::put(app_path() . '/' . $selectedResource . '_' . $classId . '.txt', var_export($metaTable));
+//            print_r($metaTable);
 
-            print_r($metaTable);
+            // time to create date
+            $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable);
         }
 
     }
