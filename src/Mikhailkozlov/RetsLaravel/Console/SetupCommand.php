@@ -1,5 +1,6 @@
 <?php namespace Mikhailkozlov\RetsLaravel\Console;
 
+use GuzzleHttp\Collection;
 use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
     Symfony\Component\Console\Input\InputArgument,
@@ -29,14 +30,12 @@ class SetupCommand extends Command
      * @author mkozlov
      *
      */
-    public function parseFields($table, $xml)
+    public function parseFields($table, \Illuminate\Support\Collection $sourceFields)
     {
-//        $xml = simplexml_load_file(app_path() . '/storage/Property_A.xml');
-        $sourceFields = $xml->xpath('METADATA/METADATA-TABLE/Field');
-
         $fields = [];
         $usedFieldNames = [];
         $labelMetadata = [];
+
         foreach ($sourceFields as $i => $sourceField) {
             // working with array is simple
             $sourceField = (array)$sourceField;
@@ -188,7 +187,7 @@ class SetupCommand extends Command
             );
 
             // time to create date
-            $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable);
+            //$this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable);
         }
 
     }
