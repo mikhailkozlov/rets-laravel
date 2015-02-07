@@ -202,7 +202,7 @@ class SetupCommand extends Command
             $this->info('We need to pull data for ' . count($fieldMetadata) . ' ' . \Str::plural('field',
                     count($fieldMetadata)));
             foreach ($fieldMetadata as $meta_id => $id) {
-                $fieldData = $rets->getFieldMetadat($metaResource->get($selectedResource)->ResourceID, $meta_id);
+                $fieldData = $rets->getFieldMetadata($metaResource->get($selectedResource)->ResourceID, $meta_id);
                 die;
             }
 
