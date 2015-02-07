@@ -143,6 +143,15 @@ class RetsRepository implements RetsInterface
         return new Collection($result);
     }
 
+    /**
+     *
+     * http://retsgw.flexmls.com/rets2_1/GetMetadata?Type=METADATA-TABLE&ID=Property:A&Format=COMPACT
+     *
+     * @param $ResourceID
+     * @param $classID
+     *
+     * @return Collection|null
+     */
     public function getTable($ResourceID, $classID)
     {
         if (is_null($classID)) {
@@ -174,6 +183,52 @@ class RetsRepository implements RetsInterface
 
         // get results
         $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
+
+        // return collection
+        return new Collection($result);
+    }
+
+    /**
+     *
+     * http://retsgw.flexmls.com/rets2_1/GetMetadata?Type=METADATA-LOOKUP_TYPE&ID=Property:20070913202543158090000000&Format=COMPACT
+     *
+     * @param $ResourceID
+     * @param $fieldID
+     *
+     * @return Collection|null
+     *
+     *
+     */
+    public function getFieldMetadata($ResourceID, $fieldID)
+    {
+        if (is_null($fieldID)) {
+            return null;
+        }
+
+        $resources = $this->client->get(
+            'GetMetadata',
+            array(),
+            array(
+                'query' => array(
+                    'Type' => 'METADATA-LOOKUP_TYPE',
+                    'ID'   => $ResourceID . ':' . $fieldID,
+                )
+            )
+        );
+
+        $res = $resources->send();
+        // store output just in case
+        \File::put(app_path() . '/storage/field_' . $ResourceID . '_' . $fieldID . '.xml', $res->getBody(true));
+
+        $resourcesData = $res->xml();
+        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+            $this->lastError = $resourcesData->attributes()->ReplyText;
+
+            return null;
+        }
+
+        // get results
+        $result = (array)$resourcesData->xpath('METADATA/METADATA-LOOKUP_TYPE/Field');
 
         // return collection
         return new Collection($result);

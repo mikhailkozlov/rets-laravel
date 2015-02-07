@@ -32,9 +32,10 @@ class SetupCommand extends Command
      */
     public function parseFields($table, \Illuminate\Support\Collection $sourceFields)
     {
-        $fields = [];
-        $usedFieldNames = [];
-        $labelMetadata = [];
+        $fields = []; // fields used in schema generator
+        $usedFieldNames = []; //
+        $labelMetadata = []; // data for config file with links to $metadata
+        $metadata = []; // array of IDs we need to look for in metadata call
 
         foreach ($sourceFields as $i => $sourceField) {
             // working with array is simple
@@ -88,6 +89,14 @@ class SetupCommand extends Command
                 'type'       => (string)$sourceField['DataType'],
                 'searchable' => intval($sourceField['Searchable']),
             ];
+
+            // push metadata to array
+            if (strtolower($sourceField['Interpretation']) == 'lookup') {
+                $sourceField['LookupName'] = trim($sourceField['LookupName']);
+                $metadata[$sourceField['LookupName']] = $sourceField['LookupName'];
+                $labelMetadata[$field[0]]['matadata_id'] = $sourceField['LookupName'];
+            }
+
             // store
             $fields[] = implode(':', $field);
         }
@@ -103,13 +112,7 @@ class SetupCommand extends Command
                 '--fields'      => implode(', ', $fields)
             ));
 
-        // we can move default model
-
-        // we need default controllers
-        $runMigration = $this->ask('Would you like to run migration now? (y/n)');
-        if (in_array($runMigration, array('y', 'yes'))) {
-            $this->call('migrate', array('--env' => $this->option('env')));
-        }
+        return $metadata;
     }
 
     public function fire()
@@ -152,7 +155,7 @@ class SetupCommand extends Command
         $metaClass = $rets->getClass($metaResource->get($selectedResource)->ResourceID);
 
         // make sure we got any
-        if(is_null($metaClass)){
+        if (is_null($metaClass)) {
             $this->error('Unable to load Class metadata with error ' . $rets->getLastError());
 
             return;
@@ -178,6 +181,9 @@ class SetupCommand extends Command
 
         // get an array
         $selectedClass = explode(',', $selectedClass);
+
+        // we're going to get metadata to retrieve
+        $fieldMetadata = [];
         // loop over selection and get table
         foreach ($selectedClass as $classId) {
             // pull meta for table
@@ -187,7 +193,32 @@ class SetupCommand extends Command
             );
 
             // time to create date
-            $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable);
+            $fieldMetadata = array_merge($fieldMetadata,
+                $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable));
+        }
+
+        // pull metadata
+        if (!empty($fieldMetadata)) {
+            $this->info('We need to pull data for ' . count($fieldMetadata) . ' ' . \Str::plural('field',
+                    count($fieldMetadata)));
+            foreach ($fieldMetadata as $meta_id => $id) {
+                $fieldData = $rets->getFieldMetadat($metaResource->get($selectedResource)->ResourceID, $meta_id);
+                die;
+            }
+
+
+        } else {
+            $this->info('Looks like we not able to find a single field that requires metadata look up. Skipping.');
+
+        }
+
+
+
+
+        // we need default controllers
+        $runMigration = $this->ask('Would you like to run migration now? (y/n)');
+        if (in_array($runMigration, array('y', 'yes'))) {
+            $this->call('migrate', array('--env' => $this->option('env')));
         }
     }
 
