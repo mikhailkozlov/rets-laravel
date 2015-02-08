@@ -5,6 +5,7 @@ use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
     Symfony\Component\Console\Input\InputArgument,
     Mikhailkozlov\RetsLaravel\FileLoader,
+    Mikhailkozlov\RetsLaravel\RetsField,
     Illuminate\Filesystem\Filesystem;
 
 
@@ -115,6 +116,9 @@ class SetupCommand extends Command
         return $metadata;
     }
 
+    /**
+     *
+     */
     public function fire()
     {
         // get connector
@@ -203,16 +207,16 @@ class SetupCommand extends Command
                     count($fieldMetadata)));
             foreach ($fieldMetadata as $meta_id => $id) {
                 $fieldData = $rets->getFieldMetadata($metaResource->get($selectedResource)->ResourceID, $meta_id);
-                die;
+                try {
+                    RetsField::createFromXml($fieldData[0]);
+                } catch (\Exception $e) {
+                    $this->error($e->getMessage());
+                }
             }
-
-
         } else {
             $this->info('Looks like we not able to find a single field that requires metadata look up. Skipping.');
 
         }
-
-
 
 
         // we need default controllers

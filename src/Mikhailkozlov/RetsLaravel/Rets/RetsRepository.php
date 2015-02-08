@@ -195,7 +195,7 @@ class RetsRepository implements RetsInterface
      * @param $ResourceID
      * @param $fieldID
      *
-     * @return Collection|null
+     * @return SimpleXMLElement|null
      *
      *
      */
@@ -228,10 +228,9 @@ class RetsRepository implements RetsInterface
         }
 
         // get results
-        $result = (array)$resourcesData->xpath('METADATA/METADATA-LOOKUP_TYPE/Field');
+        $result = (array)$resourcesData->xpath('METADATA/METADATA-LOOKUP_TYPE');
 
-        // return collection
-        return new Collection($result);
+        return $result;
     }
 
     /**
