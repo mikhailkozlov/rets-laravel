@@ -86,9 +86,10 @@ class SetupCommand extends Command
 
             // meta
             $labelMetadata[$field[0]] = [
-                'name'       => (string)$sourceField['LongName'],
+                'long'       => (string)$sourceField['LongName'],
                 'type'       => (string)$sourceField['DataType'],
                 'searchable' => intval($sourceField['Searchable']),
+                'name'       => $sourceField['SystemName'],
             ];
 
             // push metadata to array

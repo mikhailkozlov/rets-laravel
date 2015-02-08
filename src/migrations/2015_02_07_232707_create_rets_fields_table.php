@@ -17,7 +17,7 @@ class CreateRetsFieldsTable extends Migration
             'rets_fields',
             function ($table) {
                 $table->engine = 'InnoDB';
-                $table->string('id', 16)->unique();
+                $table->string('id', 36)->unique();
                 $table->string('resource', 250);
                 $table->string('lookup_id', 36);
                 $table->string('short', 250);
