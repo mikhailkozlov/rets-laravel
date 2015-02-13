@@ -6,7 +6,8 @@ use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputArgument,
     Mikhailkozlov\RetsLaravel\FileLoader,
     Mikhailkozlov\RetsLaravel\RetsField,
-    Illuminate\Filesystem\Filesystem;
+    Illuminate\Filesystem\Filesystem,
+    Illuminate\Support\Str;
 
 
 class SetupCommand extends Command
@@ -86,11 +87,13 @@ class SetupCommand extends Command
 
             // meta
             $labelMetadata[$field[0]] = [
-                'long'       => (string)$sourceField['LongName'],
-                'type'       => (string)$sourceField['DataType'],
-                'searchable' => intval($sourceField['Searchable']),
-                'name'       => $sourceField['SystemName'],
-                'dbname'     => $field[0],
+                'long'        => (string)$sourceField['LongName'],
+                'type'        => (string)$sourceField['DataType'],
+                'searchable'  => intval($sourceField['Searchable']),
+                'name'        => $sourceField['SystemName'],
+                'dbname'      => $field[0],
+                'matadata_id' => null,
+                'multiple'    => false,
             ];
 
             // push metadata to array
@@ -98,6 +101,14 @@ class SetupCommand extends Command
                 $sourceField['LookupName'] = trim($sourceField['LookupName']);
                 $metadata[$sourceField['LookupName']] = $sourceField['LookupName'];
                 $labelMetadata[$field[0]]['matadata_id'] = $sourceField['LookupName'];
+            }
+
+            // push metadata to array
+            if (strtolower($sourceField['Interpretation']) == 'lookupmulti') {
+                $sourceField['LookupName'] = trim($sourceField['LookupName']);
+                $metadata[$sourceField['LookupName']] = $sourceField['LookupName'];
+                $labelMetadata[$field[0]]['matadata_id'] = $sourceField['LookupName'];
+                $labelMetadata[$field[0]]['multiple'] = true;
             }
 
             // store
@@ -111,7 +122,7 @@ class SetupCommand extends Command
         // create migration
         $this->call('generate:migration',
             array(
-                'migrationName' => 'create_rets_' . strtolower($table) . '_table',
+                'migrationName' => 'create_rets_' . strtolower(Str::plural($table)) . '_table',
                 '--fields'      => implode(', ', $fields)
             ));
 
