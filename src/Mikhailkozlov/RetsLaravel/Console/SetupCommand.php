@@ -90,7 +90,7 @@ class SetupCommand extends Command
                 'type'       => (string)$sourceField['DataType'],
                 'searchable' => intval($sourceField['Searchable']),
                 'name'       => $sourceField['SystemName'],
-                'dbname'     => $sourceField['DBName'],
+                'dbname'     => (string)$sourceField['DBName'],
             ];
 
             // push metadata to array
