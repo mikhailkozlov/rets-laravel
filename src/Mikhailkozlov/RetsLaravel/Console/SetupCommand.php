@@ -126,7 +126,7 @@ class SetupCommand extends Command
         // create migration
         $this->call('generate:migration',
             array(
-                'migrationName' => 'create_rets_' . strtolower(Str::plural($table)) . '_table',
+                'migrationName' => 'create_rets_' . Str::plural(strtolower($table)) . '_table',
                 '--fields'      => implode(', ', $fields)
             ));
 
