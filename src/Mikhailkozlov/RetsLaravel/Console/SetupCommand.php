@@ -47,7 +47,7 @@ class SetupCommand extends Command
             $field = [(string)$sourceField['DBName']];
 
             // make sure we have DB name from the system, in case it is missing we're going to use system name
-            if (empty($field[0]) || in_array($field[0], $usedFieldNames)) {
+            if (array_key_exists(0, $field) && empty($field[0]) || in_array($field[0], $usedFieldNames)) {
                 $field[0] = strtolower((string)$sourceField['SystemName']);
             }
 
