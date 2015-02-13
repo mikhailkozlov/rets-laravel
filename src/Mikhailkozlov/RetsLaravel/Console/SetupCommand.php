@@ -97,14 +97,18 @@ class SetupCommand extends Command
             ];
 
             // push metadata to array
-            if (strtolower($sourceField['Interpretation']) == 'lookup') {
+            if (array_key_exists('Interpretation',
+                    $sourceField) && strtolower($sourceField['Interpretation']) == 'lookup'
+            ) {
                 $sourceField['LookupName'] = trim($sourceField['LookupName']);
                 $metadata[$sourceField['LookupName']] = $sourceField['LookupName'];
                 $labelMetadata[$field[0]]['matadata_id'] = $sourceField['LookupName'];
             }
 
             // push metadata to array
-            if (strtolower($sourceField['Interpretation']) == 'lookupmulti') {
+            if (array_key_exists('Interpretation',
+                    $sourceField) && strtolower($sourceField['Interpretation']) == 'lookupmulti'
+            ) {
                 $sourceField['LookupName'] = trim($sourceField['LookupName']);
                 $metadata[$sourceField['LookupName']] = $sourceField['LookupName'];
                 $labelMetadata[$field[0]]['matadata_id'] = $sourceField['LookupName'];
