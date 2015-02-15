@@ -235,6 +235,51 @@ class RetsRepository implements RetsInterface
 
     /**
      *
+     * http://retsgw.flexmls.com/rets2_1/GetObject?Type=Photo&Resource=Property&ID=20080112084722814782000000:*
+     *
+     * @param $ResourceID - Resource ID ex: Property
+     * @param $internalID - internal MLS system property id, it is not the same as MLS Number in most cases
+     * @param string $imageNumber - default is * - all images, you can pass 0 to get main image or any number of the image you need
+     *
+     * @return array|null
+     */
+    public function getImage($ResourceID, $internalID, $imageNumber = '*')
+    {
+        if (is_null($internalID)) {
+            return null;
+        }
+
+        $resources = $this->client->get(
+            'GetMetadata',
+            array(),
+            array(
+                'query' => array(
+                    'Type' => 'Photo',
+                    'Resource' =>$ResourceID,
+                    'ID'   => $internalID . ':' . $imageNumber,
+                )
+            )
+        );
+
+        $res = $resources->send();
+        // store output just in case
+        \File::put(app_path() . '/storage/photo_' . $ResourceID . '_' . $internalID . '_' . $imageNumber . '.xml', $res->getBody(true));
+
+        $resourcesData = $res->xml();
+        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+            $this->lastError = $resourcesData->attributes()->ReplyText;
+
+            return null;
+        }
+
+        // get results
+        $result = (array)$resourcesData->xpath('Photo');
+
+        return $result;
+    }
+
+    /**
+     *
      * Search RETS server
      *
      * @param null $query
