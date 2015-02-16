@@ -237,11 +237,11 @@ class RetsRepository implements RetsInterface
      *
      * http://retsgw.flexmls.com/rets2_1/GetObject?Type=Photo&Resource=Property&ID=20080112084722814782000000:*
      *
-     * @param $ResourceID - Resource ID ex: Property
-     * @param $internalID - internal MLS system property id, it is not the same as MLS Number in most cases
+     * @param $ResourceID         - Resource ID ex: Property
+     * @param $internalID         - internal MLS system property id, it is not the same as MLS Number in most cases
      * @param string $imageNumber - default is * - all images, you can pass 0 to get main image or any number of the image you need
      *
-     * @return array|null
+     * @return null|array|Collection
      */
     public function getImage($ResourceID, $internalID, $imageNumber = '*')
     {
@@ -249,31 +249,64 @@ class RetsRepository implements RetsInterface
             return null;
         }
 
+        $result = null;
+
         $resources = $this->client->get(
-            'GetMetadata',
+            'GetObject',
             array(),
             array(
-                'query' => array(
-                    'Type' => 'Photo',
-                    'Resource' =>$ResourceID,
-                    'ID'   => $internalID . ':' . $imageNumber,
-                )
+                'query'   => array(
+                    'Type'     => 'Photo',
+                    'Resource' => $ResourceID,
+                    'ID'       => $internalID . ':' . $imageNumber,
+                ),
+                'save_to' => app_path() . '/storage/photo_' . $ResourceID . '_' . $internalID . '_' . $imageNumber . '.txt'
             )
         );
 
         $res = $resources->send();
-        // store output just in case
-        \File::put(app_path() . '/storage/photo_' . $ResourceID . '_' . $internalID . '_' . $imageNumber . '.xml', $res->getBody(true));
 
-        $resourcesData = $res->xml();
-        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
-            $this->lastError = $resourcesData->attributes()->ReplyText;
+        if ($res->isContentType('multipart/parallel')) {
+            // we have multi part body and we need to parse it
 
-            return null;
+            // get boundary
+            $boundary = explode('boundary=', $res->getHeader('Content-Type'));
+            $boundary = trim($boundary[1], '"');
+
+            // split into files
+            $files = explode('--' . $boundary, $res->getBody(true));
+
+            // strip first and last item
+            $files = array_slice($files, 1, (count($files) - 2));
+
+            if (!empty($files)) {
+                // we have multi part body and we need to parse it
+                $result = new Collection();
+            }
+
+            // loop over files
+            foreach ($files as $k => $f) {
+                // parse what we have
+                $parsed = $this->parseMessage($f);
+
+                if (empty($parsed['headers'])) {
+                    // looks like empty line, skip
+                    continue;
+                }
+
+                $result->push($parsed);
+            }
+
+            return $result;
+        } elseif ($res->isContentType('image')) {
+
+            // we have a single image, deal with that
+            return array(
+                'headers'   => $res->getHeaders()->toArray(),
+                'file'      => $res->getBody(true),
+                'extension' => $this->getExtensionFromContentType($res->getHeader('Content-Type')),
+            );
         }
-
-        // get results
-        $result = (array)$resourcesData->xpath('Photo');
 
         return $result;
     }
@@ -287,7 +320,7 @@ class RetsRepository implements RetsInterface
      * @param string $class
      * @param string $queryType
      *
-     * @return Collection|null
+     * @return SimpleXml|null
      */
     public function search($query = null, $searchType = 'Property', $class = 'A', $queryType = 'DMQL2')
     {
@@ -306,7 +339,7 @@ class RetsRepository implements RetsInterface
             'Search',
             array(),
             array(
-                'query' => array(
+                'query'   => array(
                     'SearchType'    => $searchType,
                     'Class'         => $class,
                     'QueryType'     => $queryType,
@@ -315,28 +348,20 @@ class RetsRepository implements RetsInterface
                     'Format'        => 'COMPACT-DECODED',
                     'StandardNames' => 0,
 
-                )
+                ),
+                'save_to' => app_path() . '/storage/search_' . md5($query) . '.xml'
             )
         );
 
-        $res = $resources->send();
-        // store output just in case
-        \File::put(app_path() . '/storage/search_' . md5($query) . '.xml', $res->getBody(true));
+        $res = $resources->send()->xml();
 
-
-        $resourcesData = $res->xml();
-        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
-            $this->lastError = $resourcesData->attributes()->ReplyText;
+        if ((string)$res->attributes()->ReplyText != 'Success') {
+            $this->lastError = $res->attributes()->ReplyText;
 
             return null;
         }
-        $result = array();
-        // get results
-        //$result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
 
-        // return collection
-        return new Collection($result);
-
+        return $res;
     }
 
 
@@ -353,6 +378,80 @@ class RetsRepository implements RetsInterface
         }
 
         return $this->lastError;
+    }
+
+
+    /**
+     * Parse a message into parts
+     *
+     * @param string $message Message to parse
+     *
+     * @return array
+     */
+    protected function parseMultiPartMessage($message)
+    {
+        $message = trim($message);
+        $headers = array();
+        $file = '';
+        $extension = '';
+
+        // Iterate over each line in the message, accounting for line endings
+        $lines = preg_split('/(\\r?\\n)/', $message, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        for ($i = 0, $totalLines = count($lines); $i < $totalLines; $i += 2) {
+
+            $line = $lines[$i];
+
+            // If two line breaks were encountered, then this is the end of body
+            if (empty($line)) {
+                if ($i < $totalLines - 1) {
+                    $file = implode('', array_slice($lines, $i + 2));
+                }
+                break;
+            }
+
+            // Parse message headers
+            if (strpos($line, ':')) {
+                $parts = explode(':', $line, 2);
+                $key = trim($parts[0]);
+                $value = isset($parts[1]) ? trim($parts[1]) : '';
+                if (!isset($headers[$key])) {
+                    $headers[$key] = $value;
+                } elseif (!is_array($headers[$key])) {
+                    $headers[$key] = array($headers[$key], $value);
+                } else {
+                    $headers[$key][] = $value;
+                }
+            }
+        }
+
+        // get file extension from content type
+        if (array_key_exists('Content-Type', $headers)) {
+            $extension = $this->getExtensionFromContentType($headers['Content-Type']);
+        }
+
+
+        return array(
+            'headers'   => $headers,
+            'file'      => $file,
+            'extension' => $extension
+        );
+    }
+
+    /**
+     * @param $type - expected something like image/jpeg
+     *
+     * @return null|string
+     *
+     */
+    protected function getExtensionFromContentType($type)
+    {
+        $type = explode('/', $type);
+        if (array_key_exists(1, $type)) {
+            return $type[1];
+        }
+
+        return null;
     }
 }
 

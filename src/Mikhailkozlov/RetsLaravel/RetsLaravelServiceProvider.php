@@ -2,9 +2,10 @@
 
 use Illuminate\Support\ServiceProvider,
     Mikhailkozlov\RetsLaravel\Rets\RetsRepository,
-    Mikhailkozlov\RetsLaravel\InstallCommand,
     Mikhailkozlov\RetsLaravel\Console\SetupCommand,
-    Mikhailkozlov\RetsLaravel\UpdateCommand;
+    Mikhailkozlov\RetsLaravel\InstallCommand,
+    Mikhailkozlov\RetsLaravel\UpdateCommand,
+    Mikhailkozlov\RetsLaravel\InitCommand;
 
 
 class RetsLaravelServiceProvider extends ServiceProvider {
@@ -73,12 +74,17 @@ class RetsLaravelServiceProvider extends ServiceProvider {
                 return new SetupCommand();
             });
 
+        $this->app['command.rets.init'] = $this->app->share(function()
+            {
+                return new InitCommand();
+            });
+
         $this->app['command.rets.update'] = $this->app->share(function()
             {
                 return new UpdateCommand();
             });
 
-        $this->commands('command.rets.install', 'command.rets.setup', 'command.rets.update');
+        $this->commands('command.rets.install', 'command.rets.setup', 'command.rets.init', 'command.rets.update');
     }
 
 
