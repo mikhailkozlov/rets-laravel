@@ -3,9 +3,9 @@
 use Illuminate\Support\ServiceProvider,
     Mikhailkozlov\RetsLaravel\Rets\RetsRepository,
     Mikhailkozlov\RetsLaravel\Console\SetupCommand,
-    Mikhailkozlov\RetsLaravel\InstallCommand,
-    Mikhailkozlov\RetsLaravel\UpdateCommand,
-    Mikhailkozlov\RetsLaravel\InitCommand;
+    Mikhailkozlov\RetsLaravel\Console\InstallCommand,
+    Mikhailkozlov\RetsLaravel\Console\UpdateCommand,
+    Mikhailkozlov\RetsLaravel\Console\InitCommand;
 
 
 class RetsLaravelServiceProvider extends ServiceProvider {

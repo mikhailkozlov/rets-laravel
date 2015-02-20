@@ -1,8 +1,9 @@
-<?php namespace Mikhailkozlov\RetsLaravel;
+<?php namespace Mikhailkozlov\RetsLaravel\Command;
 
 use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
-    Symfony\Component\Console\Input\InputArgument;
+    Symfony\Component\Console\Input\InputArgument,
+    Mikhailkozlov\RetsLaravel\RetsProperty;
 use Illuminate\Support\Collection;
 
 
@@ -50,11 +51,26 @@ class InitCommand extends Command
         $rets = \App::make('rets');
 
         // get top level resources
-        $xml = $rets->search('(LIST_87=1950-01-01T00:00:00+)');
+        $xml = (array) $rets->search('(LIST_87=1950-01-01T00:00:00+)');
+
+        foreach($xml as $k=>$v){
+            $this->line($k);
+            if(is_array($v) || is_object($v)){
+                foreach($v as $ki=>$vi){
+                    $this->line(' -- '.$ki);
+                }
+            }
+        }
+
 
         // get columns
-        $columns = explode("\t", $xml['COLUMNS']);
+        $columns = explode("\t", (string)$xml->COLUMNS);
         $columnsParsed = [];
+
+        if(count($columns) < 2){
+            $this->error('We only see few columns in response from RETS server. This is not normal. Exit');
+            return;
+        }
 
         // parse columns and match them with DB name
         foreach ($columns as $column) {
@@ -63,6 +79,11 @@ class InitCommand extends Command
             } else {
                 $columnsParsed[] = '';
             }
+        }
+
+        if(count($xml['DATA']) < 2){
+            $this->error('We only see few properties in response from RETS server. This is not normal. Exit');
+            return;
         }
 
         // time to parse data
