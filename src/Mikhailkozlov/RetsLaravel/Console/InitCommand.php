@@ -53,18 +53,8 @@ class InitCommand extends Command
         // get top level resources
         $xml = (array) $rets->search('(LIST_87=1950-01-01T00:00:00+)');
 
-        foreach($xml as $k=>$v){
-            $this->line($k);
-            if(is_array($v) || is_object($v)){
-                foreach($v as $ki=>$vi){
-                    $this->line(' -- '.$ki);
-                }
-            }
-        }
-
-
         // get columns
-        $columns = explode("\t", (string)$xml->COLUMNS);
+        $columns = explode("\t", (string)$xml['COLUMNS']);
         $columnsParsed = [];
 
         if(count($columns) < 2){
