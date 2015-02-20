@@ -88,15 +88,15 @@ class InitCommand extends Command
             unset($res['']);
 
             // create new listing
-            RetsProperty::createFromRaw($res);
+            \Mikhailkozlov\RetsLaravel\RetsProperty::createFromRaw($res);
         }
     }
 
     protected function importImages()
     {
         // we should have things in DB now, and we can look at that data.
-        $listingCount = RetsProperty::count();
-        $this->line('We have ' . RetsProperty::count() . ' items in property table');
+        $listingCount = \Mikhailkozlov\RetsLaravel\RetsProperty::count();
+        $this->line('We have ' . \Mikhailkozlov\RetsLaravel\RetsProperty::count() . ' items in property table');
         $loadImages = $this->ask('Are you ready to load all images? (y/n)','y');
         if (strtolower($loadImages) == 'n') {
             $this->line('You can load images any time later.');
@@ -105,7 +105,7 @@ class InitCommand extends Command
 
         if ($listingCount > 0) {
             for ($i = 0; $i < $listingCount; $i += 100) {
-                $listings = RetsProperty::take(100)->skip($i)->get();
+                $listings = \Mikhailkozlov\RetsLaravel\RetsProperty::take(100)->skip($i)->get();
                 $this->line($listings->count());
 
             }
