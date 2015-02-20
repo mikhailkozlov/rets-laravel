@@ -1,4 +1,4 @@
-<?php namespace Mikhailkozlov\RetsLaravel\Command;
+<?php namespace Mikhailkozlov\RetsLaravel\Console;
 
 use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
