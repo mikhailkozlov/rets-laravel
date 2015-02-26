@@ -287,7 +287,7 @@ class RetsRepository implements RetsInterface
             // loop over files
             foreach ($files as $k => $f) {
                 // parse what we have
-                $parsed = $this->parseMessage($f);
+                $parsed = $this->parseMultiPartMessage($f);
 
                 if (empty($parsed['headers'])) {
                     // looks like empty line, skip
