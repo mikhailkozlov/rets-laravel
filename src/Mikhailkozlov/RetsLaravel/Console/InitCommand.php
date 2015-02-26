@@ -3,7 +3,8 @@
 use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
     Symfony\Component\Console\Input\InputArgument,
-    Mikhailkozlov\RetsLaravel\RetsProperty;
+    Mikhailkozlov\RetsLaravel\RetsProperty,
+    Mikhailkozlov\RetsLaravel\RetsImage;
 use Illuminate\Support\Collection;
 
 
@@ -15,6 +16,9 @@ class InitCommand extends Command
      * @var string
      */
     protected $name = 'rets:init';
+
+
+    protected $rets;
 
     /**
      * The console command description.
@@ -31,6 +35,8 @@ class InitCommand extends Command
      */
     public function fire()
     {
+        $this->rets = \App::make('rets');
+
         if ($this->option('data') === true) {
             $this->importData();
         }
@@ -48,10 +54,14 @@ class InitCommand extends Command
         $retsMeta = $retsMeta->lists('dbname', 'name');
 
         // get connector
-        $rets = \App::make('rets');
 
         // get top level resources
-        $xml = (array) $rets->search('(LIST_87=1950-01-01T00:00:00+)');
+        $xml = (array) $this->rets->search('(LIST_87=1950-01-01T00:00:00+)');
+
+        if(!array_key_exists('COLUMNS', $xml)){
+            $this->error('COLUMNS as missing. This is not normal. Exit');
+            return;
+        }
 
         // get columns
         $columns = explode("\t", (string)$xml['COLUMNS']);
@@ -105,7 +115,21 @@ class InitCommand extends Command
 
         if ($listingCount > 0) {
             for ($i = 0; $i < $listingCount; $i += 100) {
-                $listings = RetsProperty::take(100)->skip($i)->get();
+                $repo = new RetsProperty;
+                $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid']);
+                foreach($listings as $listing){
+
+                    $images = $this->rets->getImage('Property', $this->techid);
+                    if(is_null($images)){
+                        $this->error($listing->techid. ' has not images');
+                        continue;
+                    }
+                    foreach($images as $image){
+                        $file = RetsImage::fromApi($image);
+                        $file->save();
+
+                    }
+                }
                 $this->line($listings->count());
 
             }
