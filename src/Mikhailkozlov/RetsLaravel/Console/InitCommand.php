@@ -124,10 +124,10 @@ class InitCommand extends Command
                         $this->error($listing->techid. ' has not images');
                         continue;
                     }
-                    foreach($images as $image){
+                    foreach ($images as $image) {
                         $file = RetsImage::fromApi($image);
+                        $file->write($image['file']);
                         $file->save();
-
                     }
                 }
                 $this->line($listings->count());
