@@ -119,7 +119,7 @@ class InitCommand extends Command
                 $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid']);
                 foreach($listings as $listing){
 
-                    $images = $this->rets->getImage('Property', $this->techid);
+                    $images = $this->rets->getImage('Property', $listing->techid);
                     if(is_null($images)){
                         $this->error($listing->techid. ' has not images');
                         continue;
