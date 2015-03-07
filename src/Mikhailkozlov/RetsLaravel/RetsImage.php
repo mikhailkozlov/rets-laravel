@@ -100,15 +100,14 @@ class RetsImage extends Model
             return false;
         }
 
-        $meta = $this->filemanager->put($this->parent_id . '/' . $this->name, $file);
+        $saved = $this->filemanager->put($this->parent_id . '/' . $this->name, $file,
+            ['visibility' => 'public-read']);
 
-        echo 'File Meta:' . "\n";
-        print_r($meta);
-        echo "\n";
-
-        if (is_array($meta)) {
-            $this->path = $meta['path'];
-            $this->size = $meta['size'];
+        if ($saved) {
+            $meta = $this->filemanager->getMetadata($this->parent_id . '/' . $this->name, $file);
+            print_r($meta);
+//            $this->path = $meta['path'];
+//            $this->size = $meta['size'];
         }
 
         return $this;
