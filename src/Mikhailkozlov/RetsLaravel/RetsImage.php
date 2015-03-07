@@ -100,7 +100,7 @@ class RetsImage extends Model
             return false;
         }
 
-        $meta = $this->filemanager->write($this->parent_id . '/' . $this->name, $file);
+        $meta = $this->filemanager->put($this->parent_id . '/' . $this->name, $file);
 
         echo 'File Meta:' . "\n";
         print_r($meta);
