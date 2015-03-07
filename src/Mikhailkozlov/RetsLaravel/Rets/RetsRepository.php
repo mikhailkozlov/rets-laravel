@@ -62,8 +62,8 @@ class RetsRepository implements RetsInterface
 
 
         // we need to find out what is the correct output once login is a go
-        if ((string)$login->xml()->attributes()->ReplyText != 'Success') {
-            throw new ConnectionException((string)$login->xml()->attributes()->ReplyText);
+        if ((string) $login->xml()->attributes()->ReplyText != 'Success') {
+            throw new ConnectionException((string) $login->xml()->attributes()->ReplyText);
         }
     }
 
@@ -93,14 +93,14 @@ class RetsRepository implements RetsInterface
 
         $resourcesData = $res->xml();
 
-        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+        if ((string) $resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
             return null;
         }
 
         // get results
-        $result = (array)$resourcesData->xpath('METADATA/METADATA-RESOURCE/Resource');
+        $result = (array) $resourcesData->xpath('METADATA/METADATA-RESOURCE/Resource');
 
         // return collection
         return new Collection($result);
@@ -130,14 +130,14 @@ class RetsRepository implements RetsInterface
 
         $resourcesData = $res->xml();
 
-        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+        if ((string) $resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
             return null;
         }
 
         // get results
-        $result = (array)$resourcesData->xpath('METADATA/METADATA-CLASS/Class');
+        $result = (array) $resourcesData->xpath('METADATA/METADATA-CLASS/Class');
 
         // return collection
         return new Collection($result);
@@ -175,14 +175,14 @@ class RetsRepository implements RetsInterface
 
 
         $resourcesData = $res->xml();
-        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+        if ((string) $resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
             return null;
         }
 
         // get results
-        $result = (array)$resourcesData->xpath('METADATA/METADATA-TABLE/Field');
+        $result = (array) $resourcesData->xpath('METADATA/METADATA-TABLE/Field');
 
         // return collection
         return new Collection($result);
@@ -221,14 +221,14 @@ class RetsRepository implements RetsInterface
         \File::put(app_path() . '/storage/field_' . $ResourceID . '_' . $fieldID . '.xml', $res->getBody(true));
 
         $resourcesData = $res->xml();
-        if ((string)$resourcesData->attributes()->ReplyText != 'Success') {
+        if ((string) $resourcesData->attributes()->ReplyText != 'Success') {
             $this->lastError = $resourcesData->attributes()->ReplyText;
 
             return null;
         }
 
         // get results
-        $result = (array)$resourcesData->xpath('METADATA/METADATA-LOOKUP_TYPE');
+        $result = (array) $resourcesData->xpath('METADATA/METADATA-LOOKUP_TYPE');
 
         return $result;
     }
@@ -278,7 +278,7 @@ class RetsRepository implements RetsInterface
             $files = explode('--' . $boundary, $res->getBody(true));
 
             // strip first and last item
-            if(count($files) > 3) {
+            if (count($files) > 3) {
                 $files = array_slice($files, 1, (count($files) - 2));
             }
 
@@ -358,7 +358,7 @@ class RetsRepository implements RetsInterface
 
         $res = $resources->send()->xml();
 
-        if ((string)$res->attributes()->ReplyText != 'Success') {
+        if ((string) $res->attributes()->ReplyText != 'Success') {
             $this->lastError = $res->attributes()->ReplyText;
 
             return null;
@@ -449,6 +449,13 @@ class RetsRepository implements RetsInterface
      */
     protected function getExtensionFromContentType($type)
     {
+        if (is_array($type)) {
+            echo "\n";
+            print_r($type);
+            echo "\n";
+
+            return 'jpg';
+        }
         $type = explode('/', $type);
         if (array_key_exists(1, $type)) {
             return $type[1];
