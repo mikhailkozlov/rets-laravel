@@ -265,8 +265,9 @@ class RetsRepository implements RetsInterface
         );
 
         $res = $resources->send();
-
+        echo $res->getHeader('Content-Type');
         if ($res->isContentType('multipart/parallel')) {
+            echo 'going to parse multy';
             // we have multi part body and we need to parse it
 
             // get boundary
@@ -277,7 +278,9 @@ class RetsRepository implements RetsInterface
             $files = explode('--' . $boundary, $res->getBody(true));
 
             // strip first and last item
-            $files = array_slice($files, 1, (count($files) - 2));
+            if(count($files) > 3) {
+                $files = array_slice($files, 1, (count($files) - 2));
+            }
 
             if (!empty($files)) {
                 // we have multi part body and we need to parse it

@@ -71,7 +71,7 @@ class RetsImage extends Model
             }
         }
         if(array_key_exists('extension',$fileData)){
-            $attributes['name'] .= $fileData['extension'];
+            $attributes['name'] .= '.'.$fileData['extension'];
         }
         $model = new static($attributes);
 

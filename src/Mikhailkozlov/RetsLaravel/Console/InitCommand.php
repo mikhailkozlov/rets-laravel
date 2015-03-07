@@ -17,7 +17,9 @@ class InitCommand extends Command
      */
     protected $name = 'rets:init';
 
-
+    /**
+     * @var Mikhailkozlov\RetsLaravel\Rets\RetsRepository
+     */
     protected $rets;
 
     /**
@@ -126,6 +128,8 @@ class InitCommand extends Command
                     }
                     foreach ($images as $image) {
                         $file = RetsImage::fromApi($image);
+                        $file->parent_type = 'Property';
+                        $file->parent_id = $listing->techid;
                         $file->write($image['file']);
                         $file->save();
                     }
