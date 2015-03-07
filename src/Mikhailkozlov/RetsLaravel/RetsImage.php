@@ -2,7 +2,8 @@
 
 
 use Illuminate\Database\Eloquent\Model,
-    League\Flysystem\Filesystem;
+    League\Flysystem\Filesystem,
+    League\Flysystem\AdapterInterface;
 
 /**
  *
