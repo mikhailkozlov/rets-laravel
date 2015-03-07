@@ -101,13 +101,14 @@ class RetsImage extends Model
         }
 
         $saved = $this->filemanager->put($this->parent_id . '/' . $this->name, $file,
-            ['visibility' => 'public-read']);
+            ['visibility' => AdapterInterface::VISIBILITY_PUBLIC]);
 
         if ($saved) {
             $meta = $this->filemanager->getMetadata($this->parent_id . '/' . $this->name, $file);
-            print_r($meta);
-//            $this->path = $meta['path'];
-//            $this->size = $meta['size'];
+
+            $this->path = $meta['path'];
+            $this->size = $meta['size'];
+            $this->type = $meta['mimetype'];
         }
 
         return $this;
