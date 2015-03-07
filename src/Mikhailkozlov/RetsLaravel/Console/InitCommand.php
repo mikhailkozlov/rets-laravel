@@ -60,17 +60,19 @@ class InitCommand extends Command
         // get top level resources
         $xml = (array) $this->rets->search('(LIST_87=1950-01-01T00:00:00+)');
 
-        if(!array_key_exists('COLUMNS', $xml)){
+        if (!array_key_exists('COLUMNS', $xml)) {
             $this->error('COLUMNS as missing. This is not normal. Exit');
+
             return;
         }
 
         // get columns
-        $columns = explode("\t", (string)$xml['COLUMNS']);
+        $columns = explode("\t", (string) $xml['COLUMNS']);
         $columnsParsed = [];
 
-        if(count($columns) < 2){
+        if (count($columns) < 2) {
             $this->error('We only see few columns in response from RETS server. This is not normal. Exit');
+
             return;
         }
 
@@ -83,8 +85,9 @@ class InitCommand extends Command
             }
         }
 
-        if(count($xml['DATA']) < 2){
+        if (count($xml['DATA']) < 2) {
             $this->error('We only see few properties in response from RETS server. This is not normal. Exit');
+
             return;
         }
 
@@ -109,7 +112,7 @@ class InitCommand extends Command
         // we should have things in DB now, and we can look at that data.
         $listingCount = RetsProperty::count();
         $this->line('We have ' . RetsProperty::count() . ' items in property table');
-        $loadImages = $this->ask('Are you ready to load all images? (y/n)','y');
+        $loadImages = $this->ask('Are you ready to load all images? (y/n)', 'y');
         if (strtolower($loadImages) == 'n') {
             $this->line('You can load images any time later.');
             exit;
@@ -119,21 +122,36 @@ class InitCommand extends Command
             for ($i = 0; $i < $listingCount; $i += 100) {
                 $repo = new RetsProperty;
                 $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid', 'piccount']);
-                foreach($listings as $listing){
+                foreach ($listings as $listing) {
 
                     $this->line('We\'re expecting ' . $listing->piccount . ' images');
 
                     $images = $this->rets->getImage('Property', $listing->techid);
 
-                    if(is_null($images)){
-                        $this->error($listing->techid. ' has no images');
-                        continue;
+                    if (is_null($images)) {
+                        $this->error($listing->techid . ' has no images');
+
+                        $this->line('Going to get images one by one');
+
+                        for ($p = 1; $p <= $listing->piccount; $p++) {
+                            $image = $this->rets->getImage('Property', $p);
+                            if (is_null($image)) {
+                                continue;
+                            }
+                            $this->line('Save image #' . $p);
+                            $file = RetsImage::fromApi($image);
+                            $file->parent_type = 'Property';
+                            $file->parent_id = $listing->techid;
+                            $file->write($image['file']);
+                            $file->save();
+                            $this->line('Saved');
+                        }
                     }
 
-                    $this->line('We have '.$images->count() .' images');
+                    $this->line('We have ' . $images->count() . ' images');
 
-                    foreach ($images as $i=>$image) {
-                        $this->line('Save image #'.$i);
+                    foreach ($images as $i => $image) {
+                        $this->line('Save image #' . $i);
                         $file = RetsImage::fromApi($image);
                         $file->parent_type = 'Property';
                         $file->parent_id = $listing->techid;
