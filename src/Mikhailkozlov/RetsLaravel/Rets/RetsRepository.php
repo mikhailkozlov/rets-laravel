@@ -313,7 +313,7 @@ class RetsRepository implements RetsInterface
 
             // we have a single image, deal with that
             return array(
-                'headers'   => $res->getHeaders()->toArray(),
+                'headers'   => $headers,
                 'file'      => $res->getBody(true),
                 'extension' => $this->getExtensionFromContentType($res->getHeader('Content-Type')),
             );
