@@ -243,28 +243,38 @@ class RetsRepository implements RetsInterface
      *
      * @return null|array|Collection
      */
-    public function getImage($ResourceID, $internalID, $imageNumber = '*')
+    public function getImage($ResourceID, $internalID, $imageNumber = '*', array $extra = [])
     {
         if (is_null($internalID)) {
             return null;
         }
 
         $result = null;
+        // default query
+        $query = [
+            'Type'     => 'Photo',
+            'Resource' => $ResourceID,
+            'ID'       => $internalID . ':' . $imageNumber,
+            'Location' => 1,
+            'Size'     => 'HiRes'
+        ];
+
+        // add extra
+        $query = array_merge($query, $extra);
 
         $resources = $this->client->get(
             'GetObject',
-            array(),
-            array(
-                'query'   => array(
-                    'Type'     => 'Photo',
-                    'Resource' => $ResourceID,
-                    'ID'       => $internalID . ':' . $imageNumber,
-                ),
+            [],
+            [
+                'query'   => $query,
                 'save_to' => app_path() . '/storage/photo_' . $ResourceID . '_' . $internalID . '_' . $imageNumber . '.txt'
-            )
+            ]
         );
 
         $res = $resources->send();
+
+        print_r($res->getBody(true));
+        exit;
 
         if ($res->isContentType('multipart/parallel')) {
             // we have multi part body and we need to parse it
