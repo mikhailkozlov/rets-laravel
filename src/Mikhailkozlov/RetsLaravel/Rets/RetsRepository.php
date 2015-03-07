@@ -265,9 +265,8 @@ class RetsRepository implements RetsInterface
         );
 
         $res = $resources->send();
-        echo $res->getHeader('Content-Type');
+
         if ($res->isContentType('multipart/parallel')) {
-            echo 'going to parse multy';
             // we have multi part body and we need to parse it
 
             // get boundary

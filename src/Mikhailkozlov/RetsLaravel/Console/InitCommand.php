@@ -146,6 +146,8 @@ class InitCommand extends Command
                             $file->save();
                             $this->line('Saved');
                         }
+
+                        continue;
                     }
 
                     $this->line('We have ' . $images->count() . ' images');
