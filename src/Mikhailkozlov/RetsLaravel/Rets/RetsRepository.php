@@ -303,6 +303,14 @@ class RetsRepository implements RetsInterface
             return $result;
         } elseif ($res->isContentType('image')) {
 
+            // we need to flatten array headers
+            $headers = $res->getHeaders()->toArray();
+            foreach ($headers as $name=>$header) {
+                if(is_array($header)){
+                    $headers[$name] = implode(', ',$header);
+                }
+            }
+
             // we have a single image, deal with that
             return array(
                 'headers'   => $res->getHeaders()->toArray(),
@@ -449,13 +457,8 @@ class RetsRepository implements RetsInterface
      */
     protected function getExtensionFromContentType($type)
     {
-        if (is_array($type)) {
-            echo "\n";
-            print_r($type);
-            echo "\n";
-
-            return 'jpg';
-        }
+        $type = explode(';', $type);
+        $type = $type[0];
         $type = explode('/', $type);
         if (array_key_exists(1, $type)) {
             return $type[1];
