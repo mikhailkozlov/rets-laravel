@@ -121,7 +121,7 @@ class InitCommand extends Command
                 $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid', 'piccount']);
                 foreach($listings as $listing){
 
-                    $this->line('We\'re expecting '.$this->piccount .' images');
+                    $this->line('We\'re expecting ' . $listing->piccount . ' images');
 
                     $images = $this->rets->getImage('Property', $listing->techid);
 
