@@ -138,6 +138,9 @@ class InitCommand extends Command
                             if (is_null($image)) {
                                 continue;
                             }
+
+                            print_r($image);
+
                             $this->line('Save image #' . $p);
                             $file = RetsImage::fromApi($image);
                             $file->parent_type = 'Property';

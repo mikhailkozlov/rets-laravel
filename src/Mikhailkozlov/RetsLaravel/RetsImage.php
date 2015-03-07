@@ -26,7 +26,18 @@ class RetsImage extends Model
      *
      * @var array
      */
-    protected $fillable = ['id', 'name', 'path', 'description', 'default', 'position', 'type', 'size', 'parent_type', 'parent_id'];
+    protected $fillable = [
+        'id',
+        'name',
+        'path',
+        'description',
+        'default',
+        'position',
+        'type',
+        'size',
+        'parent_type',
+        'parent_id'
+    ];
 
     /**
      * @var League\Flysystem\Filesystem
@@ -54,7 +65,7 @@ class RetsImage extends Model
         $attributes = ['name' => ''];
 
         // we must have headers, file (the data), and extension
-        if(array_key_exists('headers',$fileData)){
+        if (array_key_exists('headers', $fileData)) {
             $attributes['name'] = $fileData['headers']['Content-ID'];
 
             if (array_key_exists('Content-Type', $fileData['headers'])) {
@@ -70,8 +81,8 @@ class RetsImage extends Model
                 $attributes['position'] = $fileData['headers']['Object-ID'];
             }
         }
-        if(array_key_exists('extension',$fileData)){
-            $attributes['name'] .= '.'.$fileData['extension'];
+        if (array_key_exists('extension', $fileData)) {
+            $attributes['name'] .= '.' . $fileData['extension'];
         }
         $model = new static($attributes);
 
@@ -81,21 +92,21 @@ class RetsImage extends Model
 
     public function write($file)
     {
-        if(empty($this->name)){
+        if (empty($this->name)) {
             return false;
         }
 
-        if(empty($this->parent_id)){
+        if (empty($this->parent_id)) {
             return false;
         }
 
-        $meta = $this->filemanager->write($this->parent_id.'/'.$this->name, $file);
+        $meta = $this->filemanager->write($this->parent_id . '/' . $this->name, $file);
 
-        echo 'File Meta:'."\n";
+        echo 'File Meta:' . "\n";
         print_r($meta);
         echo "\n";
 
-        if(is_array($meta)){
+        if (is_array($meta)) {
             $this->path = $meta['path'];
             $this->size = $meta['size'];
         }
