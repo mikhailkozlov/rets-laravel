@@ -118,20 +118,28 @@ class InitCommand extends Command
         if ($listingCount > 0) {
             for ($i = 0; $i < $listingCount; $i += 100) {
                 $repo = new RetsProperty;
-                $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid']);
+                $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid', 'piccount']);
                 foreach($listings as $listing){
 
+                    $this->line('We\'re expecting '.$this->piccoint .' images');
+
                     $images = $this->rets->getImage('Property', $listing->techid);
+
                     if(is_null($images)){
-                        $this->error($listing->techid. ' has not images');
+                        $this->error($listing->techid. ' has no images');
                         continue;
                     }
-                    foreach ($images as $image) {
+
+                    $this->line('We have '.$images->count() .' images');
+
+                    foreach ($images as $i=>$image) {
+                        $this->line('Save image #'.$i);
                         $file = RetsImage::fromApi($image);
                         $file->parent_type = 'Property';
                         $file->parent_id = $listing->techid;
                         $file->write($image['file']);
                         $file->save();
+                        $this->line('Saved');
                     }
                 }
                 $this->line($listings->count());

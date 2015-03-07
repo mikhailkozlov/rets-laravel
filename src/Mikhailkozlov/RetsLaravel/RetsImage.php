@@ -90,8 +90,10 @@ class RetsImage extends Model
         }
 
         $meta = $this->filemanager->write($this->parent_id.'/'.$this->name, $file);
+
         echo 'File Meta:'."\n";
         print_r($meta);
+        echo "\n";
 
         if(is_array($meta)){
             $this->path = $meta['path'];
