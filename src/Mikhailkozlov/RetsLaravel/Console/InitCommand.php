@@ -134,7 +134,7 @@ class InitCommand extends Command
                         $this->line('Going to get images one by one');
 
                         for ($p = 1; $p <= $listing->piccount; $p++) {
-                            $image = $this->rets->getImage('Property', $p);
+                            $image = $this->rets->getImage('Property', $listing->techid, $p);
                             if (is_null($image)) {
                                 continue;
                             }
