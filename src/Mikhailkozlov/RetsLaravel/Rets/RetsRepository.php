@@ -277,12 +277,13 @@ class RetsRepository implements RetsInterface
             // we have multi part body and we need to parse it
 
             // get boundary
-            $boundary = explode('boundary=', $res->getHeader('Content-Type'));
+            $contentType = explode(';',$res->getHeader('Content-Type'));
+            $boundary = explode('=', trim($contentType[1]));
             $boundary = trim($boundary[1], '"');
-
+            echo 'Boundary: "--'.$boundary.'"'."\n";
             // split into files
             $files = explode('--' . $boundary, $res->getBody(true));
-
+            echo 'first explode: '.count($files)."\n";
             // strip first and last item
             if (count($files) > 3) {
                 $files = array_slice($files, 1, (count($files) - 2));
