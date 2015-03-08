@@ -88,6 +88,12 @@ class RetsImage extends Model
         if (array_key_exists('extension', $fileData)) {
             $attributes['name'] .= '.' . $fileData['extension'];
         }
+
+        if(!empty($attributes['path'])){
+            $parts = explode('/', $attributes['path']);
+            $attributes['name'] = end($parts);
+        }
+
         $model = new static($attributes);
 
         return $model;
