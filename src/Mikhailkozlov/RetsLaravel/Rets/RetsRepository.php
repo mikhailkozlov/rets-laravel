@@ -252,7 +252,7 @@ class RetsRepository implements RetsInterface
         $result = null;
         // default query
         $query = [
-            'Type'     => 'Photo',
+            'Type'     => 'HiRes',
             'Resource' => $ResourceID,
             'ID'       => $internalID . ':' . $imageNumber,
             'Location' => 1,
@@ -272,9 +272,6 @@ class RetsRepository implements RetsInterface
         );
 
         $res = $resources->send();
-
-        print_r($res->getBody(true));
-        exit;
 
         if ($res->isContentType('multipart/parallel')) {
             // we have multi part body and we need to parse it

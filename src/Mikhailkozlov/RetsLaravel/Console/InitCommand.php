@@ -127,6 +127,8 @@ class InitCommand extends Command
                     $this->line('We\'re expecting ' . $listing->piccount . ' images');
 
                     $images = $this->rets->getImage('Property', $listing->techid);
+                    $this->line('Images collections:');
+                    print_r($images);
 
                     if (is_null($images)) {
                         $this->error($listing->techid . ' has no images');
@@ -157,7 +159,9 @@ class InitCommand extends Command
                         $file = RetsImage::fromApi($image);
                         $file->parent_type = 'Property';
                         $file->parent_id = $listing->techid;
-                        $file->write($image['file']);
+                        if(!empty($image['file'])) {
+                            $file->write($image['file']);
+                        }
                         $file->save();
                         $this->line('Saved');
                     }

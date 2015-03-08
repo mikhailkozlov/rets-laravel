@@ -81,6 +81,9 @@ class RetsImage extends Model
             if (array_key_exists('Object-ID', $fileData['headers'])) {
                 $attributes['position'] = $fileData['headers']['Object-ID'];
             }
+            if (array_key_exists('Location', $fileData['headers'])) {
+                $attributes['path'] = $fileData['headers']['Location'];
+            }
         }
         if (array_key_exists('extension', $fileData)) {
             $attributes['name'] .= '.' . $fileData['extension'];
