@@ -20,12 +20,12 @@ class CreateRetsImagesTable extends Migration
                 $table->bigIncrements('id');
                 $table->string('name', 250);
                 $table->string('path', 250);
-                $table->boolean('main')->nullable();
+                $table->boolean('default')->nullable();
                 $table->integer('position');
                 $table->string('type', 36);
                 $table->integer('size')->default(0);
-                $table->string('parent_type', 36);
-                $table->integer('parent_id');
+                $table->string('parent_type', 100);
+                $table->string('parent_id', 36);
                 $table->text('description')->nullable();
                 $table->timestamps();
             }

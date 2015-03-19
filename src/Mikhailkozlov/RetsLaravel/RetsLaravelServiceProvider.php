@@ -2,10 +2,12 @@
 
 use Illuminate\Support\ServiceProvider,
     Mikhailkozlov\RetsLaravel\Rets\RetsRepository,
+    Mikhailkozlov\RetsLaravel\Rets\DummyRetsRepository,
     Mikhailkozlov\RetsLaravel\Console\SetupCommand,
     Mikhailkozlov\RetsLaravel\Console\InstallCommand,
     Mikhailkozlov\RetsLaravel\Console\UpdateCommand,
     Mikhailkozlov\RetsLaravel\Console\InitCommand,
+    Mikhailkozlov\RetsLaravel\Console\FetchImages,
     Aws\S3\S3Client,
     League\Flysystem\AwsS3v2\AwsS3Adapter,
     League\Flysystem\Filesystem;
@@ -48,7 +50,9 @@ class RetsLaravelServiceProvider extends ServiceProvider {
 
         //$app->bind('Mikhailkozlov\RetsLaravel\Rets\RetsInterface', function($app)
         $app->bind('rets', function ($app) {
-
+            if($app->environment('local')){
+                return new DummyRetsRepository($app['events'], $app['config']);
+            }
             return new RetsRepository($app['events'], $app['config']);
         });
 
@@ -95,7 +99,18 @@ class RetsLaravelServiceProvider extends ServiceProvider {
                 return new UpdateCommand();
             });
 
-        $this->commands('command.rets.install', 'command.rets.setup', 'command.rets.init', 'command.rets.update');
+        $this->app['command.rets.images'] = $this->app->share(function()
+            {
+                return new FetchImages();
+            });
+
+        $this->commands(
+            'command.rets.install',
+            'command.rets.setup',
+            'command.rets.init',
+            'command.rets.update',
+            'command.rets.images'
+        );
     }
 
 

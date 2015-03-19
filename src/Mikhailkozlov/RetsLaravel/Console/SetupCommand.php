@@ -1,6 +1,5 @@
 <?php namespace Mikhailkozlov\RetsLaravel\Console;
 
-use GuzzleHttp\Collection;
 use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
     Symfony\Component\Console\Input\InputArgument,
@@ -10,7 +9,7 @@ use Illuminate\Console\Command,
     Illuminate\Support\Str;
 
 
-class SetupCommand extends Command
+class SetupCommand extends RetsCommand
 {
     /**
      * The console command name.
@@ -27,6 +26,72 @@ class SetupCommand extends Command
     protected $description = 'Setup RETS DB and other things';
 
     /**
+     *
+     */
+    public function fire()
+    {
+
+        // get ID for next step
+        $selectedResource = $this->pickResource();
+        $this->info('Retrieving resource data for ' . $selectedResource->ResourceID);
+
+        // get meta Classes for Resource
+        // now we need to know what tables to get
+        $selectedClasses = $this->pickClasses($selectedResource->ResourceID);
+
+        // we're going to get metadata to retrieve
+        $fieldMetadata = [];
+        // loop over selection and get table
+        foreach ($selectedClasses as $class) {
+            // pull meta for table
+            $metaTable = $this->rets->getTable(
+                $selectedResource->ResourceID,
+                (string) $class->ClassName
+            );
+
+            // time to create date
+            $fieldMetadata = array_merge(
+                $fieldMetadata,
+                $this->parseFields('class_' . (string) $class->ClassName, $metaTable)
+            );
+        }
+
+        // pull metadata
+        if (!empty($fieldMetadata)) {
+
+            $this->info('We need to pull data for ' . count($fieldMetadata) . ' ' . \Str::plural('field',
+                    count($fieldMetadata)));
+
+            foreach ($fieldMetadata as $meta_id => $id) {
+                $fieldData = $this->rets->getFieldMetadata($selectedResource->ResourceID, $meta_id);
+                try {
+                    RetsField::createFromXml($fieldData[0]);
+                } catch (\Exception $e) {
+                    $this->error($e->getMessage());
+                }
+            }
+        } else {
+            $this->info('Looks like we not able to find a single field that requires metadata look up. Skipping.');
+
+        }
+
+        // we need default controllers
+        $runMigration = $this->ask('Would you like to run migration now? (y/n)');
+        if (in_array($runMigration, array('y', 'yes'))) {
+            $this->call('migrate', array('--env' => $this->option('env')));
+        }
+    }
+
+
+    public function getOptions()
+    {
+        return array(
+            array('env', null, InputOption::VALUE_OPTIONAL, 'The environment the command should run under.', null),
+        );
+    }
+
+
+    /**
      * Run setup
      *
      * @author mkozlov
@@ -34,6 +99,7 @@ class SetupCommand extends Command
      */
     public function parseFields($table, \Illuminate\Support\Collection $sourceFields)
     {
+        $table = strtolower($table);
         $fields = []; // fields used in schema generator
         $usedFieldNames = []; //
         $labelMetadata = []; // data for config file with links to $metadata
@@ -41,14 +107,14 @@ class SetupCommand extends Command
 
         foreach ($sourceFields as $i => $sourceField) {
             // working with array is simple
-            $sourceField = (array)$sourceField;
+            $sourceField = (array) $sourceField;
 
             // set default name
-            $field = [(string)$sourceField['DBName']];
+            $field = [(string) $sourceField['DBName']];
 
             // make sure we have DB name from the system, in case it is missing we're going to use system name
             if (array_key_exists(0, $field) && empty($field[0]) || in_array($field[0], $usedFieldNames)) {
-                $field[0] = strtolower((string)$sourceField['SystemName']);
+                $field[0] = strtolower((string) $sourceField['SystemName']);
             }
 
             // make sure we do not have dupes
@@ -87,8 +153,8 @@ class SetupCommand extends Command
 
             // meta
             $labelMetadata[$field[0]] = [
-                'long'        => (string)$sourceField['LongName'],
-                'type'        => (string)$sourceField['DataType'],
+                'long'        => (string) $sourceField['LongName'],
+                'type'        => (string) $sourceField['DataType'],
                 'searchable'  => intval($sourceField['Searchable']),
                 'name'        => $sourceField['SystemName'],
                 'dbname'      => $field[0],
@@ -119,136 +185,39 @@ class SetupCommand extends Command
             $fields[] = implode(':', $field);
         }
 
-        // we need to write metadata to  config
-        $l = new FileLoader(new Filesystem(), app_path() . '/config');
-        $l->save(['rets_' . strtolower($table) => $labelMetadata], '', 'rets');
+        $updateConfig = $this->ask('Would you like to update config? (y/n)', 'y');
+        if (in_array($updateConfig, array('y', 'yes'))) {
+            // we need to write metadata to  config
+            $l = new FileLoader(new Filesystem(), app_path() . '/config');
 
-        // create migration
-        $this->call('generate:migration',
-            array(
-                'migrationName' => 'create_rets_' . Str::plural(strtolower($table)) . '_table',
-                '--fields'      => implode(', ', $fields)
-            ));
+            // get current config
+            $config = \Config::get('rets', []);
+
+            // add new values
+            $config['rets_' . $table] = $labelMetadata;
+
+            // out
+            $this->line('Going to write rets_' . $table . ' to config');
+
+            // save combined config
+            $l->save($config, '', 'rets');
+
+            // set current config as file will not be reloaded
+            \Config::set('rets', $config);
+        }
+        // we need default controllers
+        $runMigration = $this->ask('Would you like to create migration for ' . $table . '_table? (y/n)', 'y');
+        if (in_array($runMigration, array('y', 'yes'))) {
+            // create migration
+            $this->call('generate:migration',
+                array(
+                    'migrationName' => 'create_rets_' . $table . '_table',
+                    '--fields'      => implode(', ', $fields)
+                ));
+        }
 
         return $metadata;
     }
 
-    /**
-     *
-     */
-    public function fire()
-    {
-        // get connector
-        $rets = \App::make('rets');
-
-        // get top level resources
-        $metaResource = $rets->getResource();
-
-        // check if we got any
-        if (is_null($metaResource)) {
-            $this->error('Unable to load Resource metadata');
-
-            return;
-        }
-
-        // we're on the roll
-        $this->info('Following Resource are available:');
-
-        // loop and show options
-        foreach ($metaResource as $i => $resource) {
-            // normal things are green
-            $line = ' [' . $i . '] ' . $resource->StandardName . ' - ' . $resource->Description;
-
-            // there is 99% chance that we need property
-            if (stripos($resource->StandardName, 'property') !== false) {
-                $line = '<fg=green;options=bold>' . $line . '</fg=green;options=bold>';
-            }
-
-            // output
-            $this->info($line);
-        }
-
-        // get ID for next step
-        $selectedResource = $this->ask('What resource would you like to import? [0-9]');
-        $this->info('Retrieving resource data for ' . $selectedResource);
-
-        // get meta Classes for Resource
-        $metaClass = $rets->getClass($metaResource->get($selectedResource)->ResourceID);
-
-        // make sure we got any
-        if (is_null($metaClass)) {
-            $this->error('Unable to load Class metadata with error ' . $rets->getLastError());
-
-            return;
-        }
-
-        $this->info('Following Classes are available:');
-
-        // loop classes and let pick multiple
-        foreach ($metaClass as $i => $resource) {
-            // normal things are green
-            $line = ' [' . $i . '] ' . $resource->VisibleName . ' - ' . $resource->Description;
-
-            // there is 99% chance that we need property
-            if (stripos($resource->StandardName, 'property') !== false) {
-                $line = '<fg=green;options=bold>' . $line . '</fg=green;options=bold>';
-            }
-            $this->info($line);
-        }
-
-        // now we need to know what tables to get
-        $selectedClass = $this->ask('What class would you like to import? [0-9]');
-        $this->info('Retrieving class data for ' . $selectedClass);
-
-        // get an array
-        $selectedClass = explode(',', $selectedClass);
-
-        // we're going to get metadata to retrieve
-        $fieldMetadata = [];
-        // loop over selection and get table
-        foreach ($selectedClass as $classId) {
-            // pull meta for table
-            $metaTable = $rets->getTable(
-                $metaResource->get($selectedResource)->ResourceID,
-                $metaClass->get($classId)->ClassName
-            );
-
-            // time to create date
-            $fieldMetadata = array_merge($fieldMetadata,
-                $this->parseFields($metaResource->get($selectedResource)->StandardName, $metaTable));
-        }
-
-        // pull metadata
-        if (!empty($fieldMetadata)) {
-            $this->info('We need to pull data for ' . count($fieldMetadata) . ' ' . \Str::plural('field',
-                    count($fieldMetadata)));
-            foreach ($fieldMetadata as $meta_id => $id) {
-                $fieldData = $rets->getFieldMetadata($metaResource->get($selectedResource)->ResourceID, $meta_id);
-                try {
-                    RetsField::createFromXml($fieldData[0]);
-                } catch (\Exception $e) {
-                    $this->error($e->getMessage());
-                }
-            }
-        } else {
-            $this->info('Looks like we not able to find a single field that requires metadata look up. Skipping.');
-
-        }
-
-
-        // we need default controllers
-        $runMigration = $this->ask('Would you like to run migration now? (y/n)');
-        if (in_array($runMigration, array('y', 'yes'))) {
-            $this->call('migrate', array('--env' => $this->option('env')));
-        }
-    }
-
-
-    public function getOptions()
-    {
-        return array(
-            array('env', null, InputOption::VALUE_OPTIONAL, 'The environment the command should run under.', null),
-        );
-    }
 
 } 

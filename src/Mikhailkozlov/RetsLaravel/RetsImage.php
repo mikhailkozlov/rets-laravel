@@ -41,9 +41,25 @@ class RetsImage extends Model
     ];
 
     /**
+     * The attributes that aren't mass assignable.
+     *
+     * @var array
+     */
+    protected $guarded = [
+        'filemanager',
+    ];
+
+    /**
      * @var League\Flysystem\Filesystem
      */
     protected $filemanager;
+
+
+    public function parent()
+    {
+        return $this->morphTo();
+    }
+
 
     public function __construct(array $attributes = array())
     {

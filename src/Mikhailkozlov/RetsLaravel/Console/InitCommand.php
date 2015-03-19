@@ -4,11 +4,11 @@ use Illuminate\Console\Command,
     Symfony\Component\Console\Input\InputOption,
     Symfony\Component\Console\Input\InputArgument,
     Mikhailkozlov\RetsLaravel\RetsProperty,
-    Mikhailkozlov\RetsLaravel\RetsImage;
-use Illuminate\Support\Collection;
+    Mikhailkozlov\RetsLaravel\RetsImage,
+    Illuminate\Support\Collection;
 
 
-class InitCommand extends Command
+class InitCommand extends RetsCommand
 {
     /**
      * The console command name.
@@ -16,11 +16,6 @@ class InitCommand extends Command
      * @var string
      */
     protected $name = 'rets:init';
-
-    /**
-     * @var Mikhailkozlov\RetsLaravel\Rets\RetsRepository
-     */
-    protected $rets;
 
     /**
      * The console command description.
@@ -51,67 +46,89 @@ class InitCommand extends Command
 
     protected function importData()
     {
-        // get config
-        $retsMeta = new Collection(\Config::get('rets.rets_property', []));
-        $retsMeta = $retsMeta->lists('dbname', 'name');
+        // get ID for next step
+        $selectedResource = $this->pickResource();
+        $this->info('Retrieving resource data for ' . $selectedResource->ResourceID);
 
-        // get connector
-
-        // get top level resources
-        $xml = (array) $this->rets->search('(LIST_87=1950-01-01T00:00:00+)');
-
-        if (!array_key_exists('COLUMNS', $xml)) {
-            $this->error('COLUMNS as missing. This is not normal. Exit');
+        if (is_null($selectedResource)) {
+            $this->error('Not able to load resource');
 
             return;
         }
+        // get meta Classes for Resource
+        // now we need to know what tables to get
+        $selectedClasses = $this->pickClasses($selectedResource->ResourceID);
 
-        // get columns
-        $columns = explode("\t", (string) $xml['COLUMNS']);
-        $columnsParsed = [];
+        // loop over selection and get table
+        foreach ($selectedClasses as $class) {
+            // get config
+            $retsMeta = new Collection(\Config::get('rets.rets_class_' . strtolower($class->ClassName), []));
+            $retsMeta = $retsMeta->lists('dbname', 'name');
 
-        if (count($columns) < 2) {
-            $this->error('We only see few columns in response from RETS server. This is not normal. Exit');
+            // get top level resources
+            $xml = (array) $this->rets->search(
+                '(LIST_87=1950-01-01T00:00:00+)',
+                $selectedResource->ResourceID,
+                $class->ClassName
+            );
 
-            return;
-        }
+            if (!array_key_exists('COLUMNS', $xml)) {
+                $this->error('COLUMNS as missing. This is not normal. Exit');
 
-        // parse columns and match them with DB name
-        foreach ($columns as $column) {
-            if (array_key_exists($column, $retsMeta)) {
-                $columnsParsed[] = $retsMeta[$column];
-            } else {
-                $columnsParsed[] = '';
+                return;
+            }
+
+            // get columns
+            $columns = explode("\t", (string) $xml['COLUMNS']);
+            $columnsParsed = [];
+
+            if (count($columns) < 2) {
+                $this->error('We only see few columns in response from RETS server. This is not normal. Exit');
+
+                return;
+            }
+
+            // parse columns and match them with DB name
+            foreach ($columns as $column) {
+                if (array_key_exists($column, $retsMeta)) {
+                    $columnsParsed[] = $retsMeta[$column];
+                } else {
+                    $columnsParsed[] = '';
+                }
+            }
+
+            if (count($xml['DATA']) < 2) {
+                $this->error('We only see few properties in response from RETS server. This is not normal. Exit');
+
+                return;
+            }
+
+            // time to parse data
+            foreach ($xml['DATA'] as $line) {
+                // get line and split by tab
+                $line = explode("\t", $line);
+
+                // match data with columns
+                $res = array_combine($columnsParsed, $line);
+
+                // remove empty things
+                unset($res['']);
+
+                // create new listing
+                RetsProperty::createFromRaw($res, 'rets_class_' . strtolower($class->ClassName));
             }
         }
 
-        if (count($xml['DATA']) < 2) {
-            $this->error('We only see few properties in response from RETS server. This is not normal. Exit');
 
-            return;
-        }
+        // get connector
 
-        // time to parse data
-        foreach ($xml['DATA'] as $line) {
-            // get line and split by tab
-            $line = explode("\t", $line);
-
-            // match data with columns
-            $res = array_combine($columnsParsed, $line);
-
-            // remove empty things
-            unset($res['']);
-
-            // create new listing
-            RetsProperty::createFromRaw($res);
-        }
     }
 
     protected function importImages()
     {
         // we should have things in DB now, and we can look at that data.
-        $listingCount = RetsProperty::count();
-        $this->line('We have ' . RetsProperty::count() . ' items in property table');
+        $listingCount = RetsProperty::where('listing_office_shortid','445sp')->count();
+        $this->line('We have ' . $listingCount . ' items in property table');
         $loadImages = $this->ask('Are you ready to load all images? (y/n)', 'y');
         if (strtolower($loadImages) == 'n') {
             $this->line('You can load images any time later.');
@@ -121,53 +138,11 @@ class InitCommand extends Command
         if ($listingCount > 0) {
             for ($i = 0; $i < $listingCount; $i += 100) {
                 $repo = new RetsProperty;
-                $listings = RetsProperty::take(100)->skip($i)->get([$repo->getKeyName(), 'techid', 'piccount']);
+                $listings = RetsProperty::where('listing_office_shortid','445sp')->take(100)->skip($i)->get([$repo->getKeyName(), 'techid', 'piccount']);
                 foreach ($listings as $listing) {
 
-                    $this->line('We\'re expecting ' . $listing->piccount . ' images');
-
-                    $images = $this->rets->getImage('Property', $listing->techid);
-                    $this->line('Images collections:');
-                    print_r($images);
-
-                    if (is_null($images)) {
-                        $this->error($listing->techid . ' has no images');
-
-                        $this->line('Going to get images one by one');
-
-                        for ($p = 1; $p <= $listing->piccount; $p++) {
-                            $image = $this->rets->getImage('Property', $listing->techid, $p);
-                            if (is_null($image)) {
-                                continue;
-                            }
-                            $this->line('Save image #' . $p);
-                            $file = RetsImage::fromApi($image);
-                            $file->parent_type = 'Property';
-                            $file->parent_id = $listing->techid;
-                            $file->write($image['file']);
-                            $file->save();
-                            $this->line('Saved');
-                        }
-
-                        continue;
-                    }
-
-                    $this->line('We have ' . $images->count() . ' images');
-
-                    foreach ($images as $i => $image) {
-                        $this->line('Save image #' . $i);
-                        $file = RetsImage::fromApi($image);
-                        $file->parent_type = 'Property';
-                        $file->parent_id = $listing->techid;
-                        if(!empty($image['file'])) {
-                            $file->write($image['file']);
-                        }
-                        $file->save();
-                        $this->line('Saved');
-                    }
+                    $this->call('rets:image', ['--id' => $listing->techid]);
                 }
-                $this->line($listings->count());
-
             }
         }
     }

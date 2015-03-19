@@ -83,13 +83,11 @@ class RetsRepository implements RetsInterface
                 'query' => array(
                     'Type' => 'METADATA-RESOURCE',
                     'ID'   => $resourceID,
-                )
+                ),
+                'save_to' => app_path() . '/storage/resource_' . $resourceID . '.xml',
             )
         );
         $res = $resources->send();
-
-        // store output just in case
-        \File::put(app_path() . '/storage/resource_' . $resourceID . '.xml', $res->getBody(true));
 
         $resourcesData = $res->xml();
 
@@ -119,14 +117,12 @@ class RetsRepository implements RetsInterface
                 'query' => array(
                     'Type' => 'METADATA-CLASS',
                     'ID'   => $classID,
-                )
+                ),
+                'save_to' => app_path() . '/storage/class_' . $classID . '.xml',
             )
         );
 
         $res = $resources->send();
-
-        // store output just in case
-        \File::put(app_path() . '/storage/class_' . $classID . '.xml', $res->getBody(true));
 
         $resourcesData = $res->xml();
 
@@ -165,14 +161,12 @@ class RetsRepository implements RetsInterface
                 'query' => array(
                     'Type' => 'METADATA-TABLE',
                     'ID'   => $ResourceID . ':' . $classID,
-                )
+                ),
+                'save_to' => app_path() . '/storage/table_' . $ResourceID . '_' . $classID . '.xml',
             )
         );
 
         $res = $resources->send();
-        // store output just in case
-        \File::put(app_path() . '/storage/table_' . $ResourceID . '_' . $classID . '.xml', $res->getBody(true));
-
 
         $resourcesData = $res->xml();
         if ((string) $resourcesData->attributes()->ReplyText != 'Success') {
@@ -212,13 +206,12 @@ class RetsRepository implements RetsInterface
                 'query' => array(
                     'Type' => 'METADATA-LOOKUP_TYPE',
                     'ID'   => $ResourceID . ':' . $fieldID,
-                )
+                ),
+                'save_to' => app_path() . '/storage/field_' . $ResourceID . '_' . $fieldID . '.xml'
             )
         );
 
         $res = $resources->send();
-        // store output just in case
-        \File::put(app_path() . '/storage/field_' . $ResourceID . '_' . $fieldID . '.xml', $res->getBody(true));
 
         $resourcesData = $res->xml();
         if ((string) $resourcesData->attributes()->ReplyText != 'Success') {
@@ -234,29 +227,36 @@ class RetsRepository implements RetsInterface
     }
 
     /**
-     *
      * http://retsgw.flexmls.com/rets2_1/GetObject?Type=Photo&Resource=Property&ID=20080112084722814782000000:*
      *
      * @param $ResourceID         - Resource ID ex: Property
      * @param $internalID         - internal MLS system property id, it is not the same as MLS Number in most cases
      * @param string $imageNumber - default is * - all images, you can pass 0 to get main image or any number of the image you need
+     * @param string $type        - Default image resolution is HiRes. Other options Thumbnail, Photo, 640x480
+     * @param array $extra
      *
-     * @return null|array|Collection
+     * @return \Illuminate\Support\Collection|null
      */
-    public function getImage($ResourceID, $internalID, $imageNumber = '*', array $extra = [])
+    public function getImage($ResourceID, $internalID, $imageNumber = '*', $type = 'Type', array $extra = [])
     {
         if (is_null($internalID)) {
+            return null;
+        }
+
+        // http://www.flexmls.com/developers/rets/tutorials/how-to-retrieve-high-resolution-photos/
+        if (!in_array($type, ['Thumbnail', 'Photo', '640x480', 'HiRes'])) {
+            $this->lastError = $type . ' is not valid image format';
+
             return null;
         }
 
         $result = null;
         // default query
         $query = [
-            'Type'     => 'HiRes',
+            'Type'     => $type,
             'Resource' => $ResourceID,
             'ID'       => $internalID . ':' . $imageNumber,
-            'Location' => 1,
-            'Size'     => 'HiRes'
+            'Location' => 1, // we only going to pull links. Pulling files makes no sense as they are very small
         ];
 
         // add extra
@@ -280,10 +280,10 @@ class RetsRepository implements RetsInterface
             $contentType = explode(';',$res->getHeader('Content-Type'));
             $boundary = explode('=', trim($contentType[1]));
             $boundary = trim($boundary[1], '"');
-            echo 'Boundary: "--'.$boundary.'"'."\n";
+
             // split into files
             $files = explode('--' . $boundary, $res->getBody(true));
-            echo 'first explode: '.count($files)."\n";
+
             // strip first and last item
             if (count($files) > 3) {
                 $files = array_slice($files, 1, (count($files) - 2));
@@ -308,22 +308,6 @@ class RetsRepository implements RetsInterface
             }
 
             return $result;
-        } elseif ($res->isContentType('image')) {
-
-            // we need to flatten array headers
-            $headers = $res->getHeaders()->toArray();
-            foreach ($headers as $name=>$header) {
-                if(is_array($header)){
-                    $headers[$name] = implode(', ',$header);
-                }
-            }
-
-            // we have a single image, deal with that
-            return array(
-                'headers'   => $headers,
-                'file'      => $res->getBody(true),
-                'extension' => $this->getExtensionFromContentType($res->getHeader('Content-Type')),
-            );
         }
 
         return $result;

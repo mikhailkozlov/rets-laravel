@@ -5,6 +5,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class RetsProperty extends Model
 {
+    /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'rets_class_a';
+
+
     protected $primaryKey = 'listingid';
     /**
      * Indicates if the IDs are auto-incrementing.
@@ -28,6 +36,16 @@ class RetsProperty extends Model
      */
     protected $guarded = [];
 
+    public function photos()
+    {
+        return $this->morphMany(
+            'Mikhailkozlov\\RetsLaravel\\RetsImage',
+            'parent',
+            'parent_type',
+            'parent_id',
+            'techid');
+    }
+
 
     public function getIdAttribute($value)
     {
@@ -36,17 +54,17 @@ class RetsProperty extends Model
 
     public function getTitleAttribute($value)
     {
-        return $this->housenbr.' '.$this->streetname.' '.$this->streetsuff;
+        return $this->housenbr . ' ' . $this->streetname . ' ' . $this->streetsuff;
     }
 
     public function getFullAddressAttribute($value)
     {
-        return $this->housenbr.' '.$this->streetname.' '.$this->streetsuff.' '.$this->city.', '.$this->state.' '.$this->zip;
+        return $this->housenbr . ' ' . $this->streetname . ' ' . $this->streetsuff . ' ' . $this->city . ', ' . $this->state . ' ' . $this->zip;
     }
 
     public function getFullStreetAttribute($value)
     {
-        return $this->housenbr.' '.$this->streetname.' '.$this->streetsuff;
+        return $this->housenbr . ' ' . $this->streetname . ' ' . $this->streetsuff;
     }
 
 
@@ -64,25 +82,34 @@ class RetsProperty extends Model
      *
      * @return static
      */
-    static public function createFromRaw($raw)
+    static public function createFromRaw($raw, $table = 'rets_class_a')
     {
         $attributes = [];
         foreach ($raw as $key => $value) {
             $attributes[$key] = $value;
-            if (!is_null(\Config::get('rets.rets_property.' . $key . '.matadata_id', null))) {
+            $metadata_id = \Config::get('rets.' . $table . '.' . $key . '.matadata_id', null);
+            if (!is_null($metadata_id)) {
                 $ids = explode(',', $value);
-                $values = RetsField::where('lookup_id',
-                    \Config::get('rets.rets_property.' . $key . '.matadata_id', null))
+                $values = RetsField::where('lookup_id', $metadata_id)
                     ->whereIn('id', $ids)
                     ->remember(20)
                     ->get();
-
-                $value = $values->lists('long', 'id');
-                $attributes[$key] = implode(', ', $value);
+                if (!$values->isEmpty()) {
+                    $valueFromMap = $values->lists('long', 'id');
+                    $attributes[$key] = implode(', ', $valueFromMap);
+                } else {
+                    $attributes[$key] = $value;
+                }
             }
         }
 
-        return static::create($attributes);
+        $model = new static($attributes);
+
+        $model->setTable($table);
+
+        $model->save();
+
+        return $model;
     }
 
     /**
