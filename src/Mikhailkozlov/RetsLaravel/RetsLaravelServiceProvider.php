@@ -7,10 +7,7 @@ use Illuminate\Support\ServiceProvider,
     Mikhailkozlov\RetsLaravel\Console\InstallCommand,
     Mikhailkozlov\RetsLaravel\Console\UpdateCommand,
     Mikhailkozlov\RetsLaravel\Console\InitCommand,
-    Mikhailkozlov\RetsLaravel\Console\FetchImages,
-    Aws\S3\S3Client,
-    League\Flysystem\AwsS3v2\AwsS3Adapter,
-    League\Flysystem\Filesystem;
+    Mikhailkozlov\RetsLaravel\Console\FetchImages;
 
 class RetsLaravelServiceProvider extends ServiceProvider {
 
@@ -55,16 +52,6 @@ class RetsLaravelServiceProvider extends ServiceProvider {
             }
             return new RetsRepository($app['events'], $app['config']);
         });
-
-        $app->bind('rets.storage', function ($app) {
-
-            $client = S3Client::factory($app['config']->get('rets-laravel::adapter'));
-
-            $adapter = new AwsS3Adapter($client, $app['config']->get('rets-laravel::adapter.bucket'));
-
-            return new Filesystem($adapter);
-        });
-
     }
 
     /**

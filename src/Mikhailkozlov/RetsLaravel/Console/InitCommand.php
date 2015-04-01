@@ -127,7 +127,7 @@ class InitCommand extends RetsCommand
     protected function importImages()
     {
         // we should have things in DB now, and we can look at that data.
-        $listingCount = RetsProperty::where('listing_office_shortid','445sp')->count();
+        $listingCount = RetsProperty::count();
         $this->line('We have ' . $listingCount . ' items in property table');
         $loadImages = $this->ask('Are you ready to load all images? (y/n)', 'y');
         if (strtolower($loadImages) == 'n') {
@@ -136,11 +136,12 @@ class InitCommand extends RetsCommand
         }
 
         if ($listingCount > 0) {
-            for ($i = 0; $i < $listingCount; $i += 100) {
-                $repo = new RetsProperty;
-                $listings = RetsProperty::where('listing_office_shortid','445sp')->take(100)->skip($i)->get([$repo->getKeyName(), 'techid', 'piccount']);
-                foreach ($listings as $listing) {
+            for ($i = 4100; $i < $listingCount; $i += 100) {
 
+                $this->info('Current offset: ' . $i);
+
+                $listings = RetsProperty::take(100)->skip($i)->get(['techid']);
+                foreach ($listings as $listing) {
                     $this->call('rets:image', ['--id' => $listing->techid]);
                 }
             }

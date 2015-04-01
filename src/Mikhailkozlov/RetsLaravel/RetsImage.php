@@ -1,9 +1,7 @@
 <?php namespace Mikhailkozlov\RetsLaravel;
 
 
-use Illuminate\Database\Eloquent\Model,
-    League\Flysystem\Filesystem,
-    League\Flysystem\AdapterInterface;
+use Jenssegers\Mongodb\Model as Eloquent;
 
 /**
  *
@@ -13,22 +11,16 @@ use Illuminate\Database\Eloquent\Model,
  * Class to store images in DB and on the file system
  *
  */
-class RetsImage extends Model
+class RetsImage extends Eloquent
 {
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
-
+    protected $collection = 'rets_photos';
+    protected $connection = 'mongodb';
     /**
      * The attributes that are mass assignable.
      *
      * @var array
      */
     protected $fillable = [
-        'id',
         'name',
         'path',
         'description',
@@ -36,8 +28,6 @@ class RetsImage extends Model
         'position',
         'type',
         'size',
-        'parent_type',
-        'parent_id'
     ];
 
     /**
@@ -45,29 +35,7 @@ class RetsImage extends Model
      *
      * @var array
      */
-    protected $guarded = [
-        'filemanager',
-    ];
-
-    /**
-     * @var League\Flysystem\Filesystem
-     */
-    protected $filemanager;
-
-
-    public function parent()
-    {
-        return $this->morphTo();
-    }
-
-
-    public function __construct(array $attributes = array())
-    {
-        parent::__construct($attributes);
-
-        $this->filemanager = \App::make('rets.storage');
-    }
-
+    protected $guarded = [];
 
     /**
      * Save a new model and return the instance.
@@ -95,7 +63,7 @@ class RetsImage extends Model
                 $attributes['default'] = $fileData['headers']['Preferred'];
             }
             if (array_key_exists('Object-ID', $fileData['headers'])) {
-                $attributes['position'] = $fileData['headers']['Object-ID'];
+                $attributes['position'] = intval($fileData['headers']['Object-ID']);
             }
             if (array_key_exists('Location', $fileData['headers'])) {
                 $attributes['path'] = $fileData['headers']['Location'];
@@ -114,40 +82,4 @@ class RetsImage extends Model
 
         return $model;
     }
-
-
-    public function write($file)
-    {
-        if (empty($this->name)) {
-            return false;
-        }
-
-        if (empty($this->parent_id)) {
-            return false;
-        }
-
-        $saved = $this->filemanager->put($this->parent_id . '/' . $this->name, $file,
-            ['visibility' => AdapterInterface::VISIBILITY_PUBLIC]);
-
-        if ($saved) {
-            $meta = $this->filemanager->getMetadata($this->parent_id . '/' . $this->name, $file);
-
-            $this->path = $meta['path'];
-            $this->size = $meta['size'];
-            $this->type = $meta['mimetype'];
-        }
-
-        return $this;
-    }
-
-    /**
-     * Get file system provider
-     *
-     * @return mixed
-     */
-    public function getFilemanager()
-    {
-        return $this->filemanager;
-    }
-
 }

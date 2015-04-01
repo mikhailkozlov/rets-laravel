@@ -68,16 +68,17 @@ class FetchImages extends RetsCommand
         $this->rets = \App::make('rets');
 
         // we should have things in DB now, and we can look at that data.
-        $listing = RetsProperty::where('techid', $techid)->first(['techid', 'piccount']);
+        $listing = RetsProperty::where('techid', $techid)->first();
 
         if (is_null($listing)) {
+            $this->error('Not able to locate listing bu techid');
             return false;
         }
 
         // clean all images
         $listing->photos()->delete();
 
-        $this->line('We\'re expecting ' . $listing->piccount . ' images');
+        $this->line('We\'re expecting ' . $listing->piccount . ' images for '.$listing->listnbr);
 
         $images = $this->rets->getImage($resource, $listing->techid, '*', $quality);
         $this->line('Images collections:');
@@ -94,15 +95,9 @@ class FetchImages extends RetsCommand
                 if (is_null($image)) {
                     continue;
                 }
-                $this->line('Save image #' . $p);
                 $file = RetsImage::fromApi($image);
-                $file->parent_type = 'Property';
-                $file->parent_id = $listing->techid;
-                // $file->write($image['file']); // - we're going to move this to async process, as it is optional
-                $file->save();
-                $this->line('Saved');
+                $listing->photos()->save($file);
             }
-
             $this->info('Images imported!');
 
             return;
@@ -111,15 +106,8 @@ class FetchImages extends RetsCommand
         $this->line('We have ' . $images->count() . ' images');
 
         foreach ($images as $i => $image) {
-            $this->line('Save image #' . $i);
             $file = RetsImage::fromApi($image);
-            $file->parent_type = 'Mikhailkozlov\RetsLaravel\RetsProperty';
-            $file->parent_id = $listing->techid;
-//            if(!empty($image['file'])) {
-//                 $file->write($image['file']); // - we're going to move this to async process, as it is optional
-//            }
-            $file->save();
-            $this->line('Saved');
+            $listing->photos()->save($file);
         }
     }
 

@@ -1,51 +1,26 @@
 <?php namespace Mikhailkozlov\RetsLaravel;
 
 
-use Illuminate\Database\Eloquent\Model;
+use Jenssegers\Mongodb\Model as Eloquent;
 
-class RetsProperty extends Model
+class RetsProperty extends Eloquent
 {
+    protected $collection = 'rets_properties';
+    protected $connection = 'mongodb';
     /**
-     * The table associated with the model.
+     * The primary key for the model.
      *
      * @var string
      */
-    protected $table = 'rets_class_a';
-
-
     protected $primaryKey = 'listingid';
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
-    public $incrementing = false;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [];
-
-
-    /**
-     * The attributes that aren't mass assignable.
-     *
-     * @var array
-     */
     protected $guarded = [];
 
-    public function photos()
-    {
-        return $this->morphMany(
-            'Mikhailkozlov\\RetsLaravel\\RetsImage',
-            'parent',
-            'parent_type',
-            'parent_id',
-            'techid');
-    }
 
+    public function photos(){
+
+        return $this->embedsMany('Mikhailkozlov\\RetsLaravel\\RetsImage');
+    }
 
     public function getIdAttribute($value)
     {
@@ -104,8 +79,6 @@ class RetsProperty extends Model
         }
 
         $model = new static($attributes);
-
-        $model->setTable($table);
 
         $model->save();
 

@@ -74,12 +74,6 @@ class SetupCommand extends RetsCommand
             $this->info('Looks like we not able to find a single field that requires metadata look up. Skipping.');
 
         }
-
-        // we need default controllers
-        $runMigration = $this->ask('Would you like to run migration now? (y/n)');
-        if (in_array($runMigration, array('y', 'yes'))) {
-            $this->call('migrate', array('--env' => $this->option('env')));
-        }
     }
 
 
@@ -100,7 +94,6 @@ class SetupCommand extends RetsCommand
     public function parseFields($table, \Illuminate\Support\Collection $sourceFields)
     {
         $table = strtolower($table);
-        $fields = []; // fields used in schema generator
         $usedFieldNames = []; //
         $labelMetadata = []; // data for config file with links to $metadata
         $metadata = []; // array of IDs we need to look for in metadata call
@@ -180,11 +173,9 @@ class SetupCommand extends RetsCommand
                 $labelMetadata[$field[0]]['matadata_id'] = $sourceField['LookupName'];
                 $labelMetadata[$field[0]]['multiple'] = true;
             }
-
-            // store
-            $fields[] = implode(':', $field);
         }
 
+        // this probably needs to move to DB too
         $updateConfig = $this->ask('Would you like to update config? (y/n)', 'y');
         if (in_array($updateConfig, array('y', 'yes'))) {
             // we need to write metadata to  config
@@ -205,16 +196,7 @@ class SetupCommand extends RetsCommand
             // set current config as file will not be reloaded
             \Config::set('rets', $config);
         }
-        // we need default controllers
-        $runMigration = $this->ask('Would you like to create migration for ' . $table . '_table? (y/n)', 'y');
-        if (in_array($runMigration, array('y', 'yes'))) {
-            // create migration
-            $this->call('generate:migration',
-                array(
-                    'migrationName' => 'create_rets_' . $table . '_table',
-                    '--fields'      => implode(', ', $fields)
-                ));
-        }
+
 
         return $metadata;
     }
