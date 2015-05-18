@@ -55,7 +55,17 @@ class FetchImages extends RetsCommand
             return;
         }
 
-        $imported = $this->importImages($data['techid'], $data['resource'], $data['quality']);
+        if ($data['techid'] == 'self') {
+            $listings = RetsProperty::where('listing_office_shortid', \Config::get('system.sales.office_id', '445sp'))
+                ->get(['techid']);
+
+            foreach ($listings as $listing) {
+                $imported = $this->importImages($listing->techid, $data['resource'], $data['quality']);
+            }
+        } else {
+            $imported = $this->importImages($data['techid'], $data['resource'], $data['quality']);
+
+        }
 
         if (!is_null($job)) {
             $job->delete();
