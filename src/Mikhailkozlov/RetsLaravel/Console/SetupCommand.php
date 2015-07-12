@@ -30,7 +30,6 @@ class SetupCommand extends RetsCommand
      */
     public function fire()
     {
-
         // get ID for next step
         $selectedResource = $this->pickResource();
         $this->info('Retrieving resource data for ' . $selectedResource->ResourceID);
@@ -41,6 +40,7 @@ class SetupCommand extends RetsCommand
 
         // we're going to get metadata to retrieve
         $fieldMetadata = [];
+
         // loop over selection and get table
         foreach ($selectedClasses as $class) {
             // pull meta for table
@@ -72,7 +72,6 @@ class SetupCommand extends RetsCommand
             }
         } else {
             $this->info('Looks like we not able to find a single field that requires metadata look up. Skipping.');
-
         }
     }
 
@@ -137,6 +136,7 @@ class SetupCommand extends RetsCommand
                     }
                     break;
             }
+
             if (intval($sourceField['Required']) == 0) {
                 $field[] = 'nullable';
             }

@@ -31,6 +31,10 @@ class UpdateCommand extends Command
     public function fire()
     {
         $this->line($this->name.' command');
+
+
+
+
     }
 
 

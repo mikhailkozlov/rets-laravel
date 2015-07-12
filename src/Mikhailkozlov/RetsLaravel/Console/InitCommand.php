@@ -55,6 +55,7 @@ class InitCommand extends RetsCommand
 
             return;
         }
+
         // get meta Classes for Resource
         // now we need to know what tables to get
         $selectedClasses = $this->pickClasses($selectedResource->ResourceID);
@@ -63,6 +64,8 @@ class InitCommand extends RetsCommand
         foreach ($selectedClasses as $class) {
             // get config
             $retsMeta = new Collection(\Config::get('rets.rets_class_' . strtolower($class->ClassName), []));
+
+            // list metadata
             $retsMeta = $retsMeta->lists('dbname', 'name');
 
             // get top level resources
@@ -114,8 +117,12 @@ class InitCommand extends RetsCommand
                 // remove empty things
                 unset($res['']);
 
+                $lookup = RetsProperty::find($res['listingid'], ['listingid']);
+
+                $exists = (is_null($lookup)) ? false:true;
+
                 // create new listing
-                RetsProperty::createFromRaw($res, 'rets_class_' . strtolower($class->ClassName));
+                RetsProperty::createFromRaw($res, 'rets_class_' . strtolower($class->ClassName), $exists);
             }
         }
 

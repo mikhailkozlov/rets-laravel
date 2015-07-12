@@ -6,6 +6,7 @@ use Jenssegers\Mongodb\Model as Eloquent;
 class RetsProperty extends Eloquent
 {
     protected $collection = 'rets_properties';
+
     protected $connection = 'mongodb';
     /**
      * The primary key for the model.
@@ -57,7 +58,7 @@ class RetsProperty extends Eloquent
      *
      * @return static
      */
-    static public function createFromRaw($raw, $table = 'rets_class_a')
+    static public function createFromRaw($raw, $table = 'rets_class_a', $existing = false)
     {
         $attributes = [];
         foreach ($raw as $key => $value) {
@@ -79,6 +80,8 @@ class RetsProperty extends Eloquent
         }
 
         $model = new static($attributes);
+
+        $model->exists = $existing;
 
         $model->save();
 

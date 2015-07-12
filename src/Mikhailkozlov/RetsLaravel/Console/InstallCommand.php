@@ -19,7 +19,7 @@ class InstallCommand extends Command
      *
      * @var string
      */
-    protected $description = 'publish assets,configs and run migration';
+    protected $description = 'Publish assets,configs and run migration';
 
     /**
      * Run install
