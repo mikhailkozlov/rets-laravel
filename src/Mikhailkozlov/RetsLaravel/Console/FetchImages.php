@@ -81,7 +81,7 @@ class FetchImages extends RetsCommand
         $listing = RetsProperty::where('techid', $techid)->first();
 
         if (is_null($listing)) {
-            $this->error('Not able to locate listing bu techid');
+            $this->error('Not able to locate listing by techid');
             return false;
         }
 
