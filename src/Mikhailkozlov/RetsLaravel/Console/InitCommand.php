@@ -155,6 +155,34 @@ class InitCommand extends RetsCommand
         }
     }
 
+    protected function importImagesAgency()
+    {
+        // we should have things in DB now, and we can look at that data.
+        $listingCount = RetsProperty::where('listing_office_shortid', \Config::get('system.sales.office_id', '445sp'))->count();
+
+        $this->line('We have ' . $listingCount . ' items in property table');
+
+        $loadImages = $this->ask('Are you ready to load all images? (y/n)', 'y');
+
+        if (strtolower($loadImages) == 'n') {
+            $this->line('You can load images any time later.');
+            exit;
+        }
+
+        if ($listingCount > 0) {
+            for ($i = 0; $i < $listingCount; $i += 100) {
+
+                $this->info('Current offset: ' . $i);
+
+                $listings = RetsProperty::where('listing_office_shortid', \Config::get('system.sales.office_id', '445sp'))->take(100)->skip($i)->get(['techid']);
+
+                foreach ($listings as $listing) {
+                    $this->call('rets:image', ['--id' => $listing->techid]);
+                }
+            }
+        }
+    }
+
     public function getOptions()
     {
         return array(
